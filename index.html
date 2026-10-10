@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suivi référent numérique</title>
+<meta name="description" content="Journal des interventions du référent numérique : saisie rapide, synthèse par mission et export Excel.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --encre:#1D3A8A; --encre-2:#2F55C4; --marge:#D64545; --papier:#FBFCFE; --carreau:#D7DEF2;
+  --texte:#1B2233; --doux:#5B6478; --fond:#EEF1F8; --ligne:#D5DAE6; --carte:#FFFFFF;
+  --ok:#1F7A4D; --attention:#B45309; --focus:#F5B700;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --encre:#9DB4FF; --encre-2:#BCCBFF; --marge:#FF8A8A; --papier:#161B26; --carreau:#25304A;
+    --texte:#E8ECF5; --doux:#A3ACC0; --fond:#0F131B; --ligne:#2C3448; --carte:#1A2030;
+    --ok:#5BD69A; --attention:#F5A65B;
+  }
+}
+:root[data-theme="dark"]{
+  --encre:#9DB4FF; --encre-2:#BCCBFF; --marge:#FF8A8A; --papier:#161B26; --carreau:#25304A;
+  --texte:#E8ECF5; --doux:#A3ACC0; --fond:#0F131B; --ligne:#2C3448; --carte:#1A2030;
+  --ok:#5BD69A; --attention:#F5A65B;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--fond);color:var(--texte);font:16px/1.5 "Atkinson Hyperlegible",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+
+/* En-tête façon cahier Seyès */
+header.cahier{
+  background-color:var(--papier);
+  background-image:
+    linear-gradient(90deg, transparent 0 46px, var(--marge) 46px 48px, transparent 48px),
+    repeating-linear-gradient(0deg, var(--carreau) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(90deg, var(--carreau) 0 1px, transparent 1px 32px);
+  border-bottom:1px solid var(--ligne);
+  padding:18px 16px 14px 64px;
+}
+.cahier h1{margin:0;font-size:1.45rem;line-height:1.2;color:var(--encre)}
+.cahier p{margin:2px 0 0;color:var(--doux);font-size:.92rem}
+.semaine{margin-top:10px;display:flex;flex-wrap:wrap;gap:4px 18px;align-items:baseline}
+.semaine strong{font-size:2rem;color:var(--encre);line-height:1}
+.semaine span{color:var(--doux);font-size:.9rem}
+
+nav.onglets{position:sticky;top:0;z-index:5;display:flex;gap:2px;background:var(--fond);border-bottom:1px solid var(--ligne);padding:0 8px;overflow-x:auto}
+nav.onglets button{border:0;background:none;padding:12px 14px;cursor:pointer;color:var(--doux);font-weight:700;border-bottom:3px solid transparent;white-space:nowrap}
+nav.onglets button[aria-selected="true"]{color:var(--encre);border-bottom-color:var(--encre)}
+
+main{max-width:980px;margin:0 auto;padding:16px}
+section[hidden]{display:none}
+.bloc{background:var(--carte);border:1px solid var(--ligne);border-radius:10px;padding:16px;margin-bottom:14px}
+.bloc h2{margin:0 0 10px;font-size:1.1rem;color:var(--encre)}
+.etape{margin:0 0 14px}
+.etape > label,.etape > .titre{display:block;font-weight:700;margin-bottom:6px}
+.aide{color:var(--doux);font-size:.88rem;margin:4px 0 0}
+
+.puces{display:flex;flex-wrap:wrap;gap:8px}
+.puce{border:1.5px solid var(--ligne);background:var(--carte);border-radius:999px;padding:7px 14px;cursor:pointer;min-height:40px}
+.puce[aria-pressed="true"]{background:var(--encre);border-color:var(--encre);color:var(--papier)}
+.missions{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mission{display:flex;align-items:center;gap:8px;text-align:left;border:1.5px solid var(--ligne);background:var(--carte);border-radius:8px;padding:10px 12px;cursor:pointer;min-height:48px;font-weight:700}
+.mission i{width:12px;height:12px;border-radius:3px;flex:none}
+.mission[aria-pressed="true"]{border-color:var(--encre);box-shadow:inset 0 0 0 1.5px var(--encre);background:color-mix(in srgb,var(--encre) 8%,var(--carte))}
+
+input[type=text],input[type=date],input[type=number],select,textarea{width:100%;border:1.5px solid var(--ligne);background:var(--papier);border-radius:8px;padding:9px 11px;min-height:44px}
+textarea{min-height:60px;resize:vertical}
+.ligne2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.duree-perso{display:flex;gap:8px;align-items:center;margin-top:8px}
+.duree-perso input{width:80px}
+.bascule{display:flex;align-items:center;gap:10px;cursor:pointer}
+.bascule input{width:22px;height:22px;accent-color:var(--encre)}
+
+.btn{border:0;border-radius:8px;padding:11px 18px;font-weight:700;cursor:pointer;min-height:44px;background:var(--encre);color:var(--papier)}
+.btn.sec{background:transparent;color:var(--encre);border:1.5px solid var(--encre)}
+.btn.danger{background:transparent;color:var(--marge);border:1.5px solid var(--marge)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.rapide{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--texte);color:var(--fond);padding:10px 16px;border-radius:8px;z-index:20;display:flex;gap:14px;align-items:center;max-width:calc(100% - 32px)}
+.toast[hidden]{display:none}
+.toast button{background:none;border:0;color:var(--focus);font-weight:700;cursor:pointer}
+
+/* Journal */
+.filtres{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:10px;margin-bottom:12px}
+.jour{margin:16px 0 6px;font-weight:700;color:var(--doux);font-size:.92rem;display:flex;justify-content:space-between}
+.entree{display:grid;grid-template-columns:6px 1fr auto;gap:10px;background:var(--carte);border:1px solid var(--ligne);border-radius:8px;padding:10px 12px 10px 0;margin-bottom:6px}
+.entree .barre{border-radius:0 3px 3px 0}
+.entree .t{font-weight:700}
+.entree .m{color:var(--doux);font-size:.88rem}
+.entree .d{text-align:right;font-weight:700;white-space:nowrap}
+.entree .d small{display:block;font-weight:400;color:var(--doux)}
+.mini{background:none;border:0;color:var(--encre-2);cursor:pointer;padding:4px 6px;font-size:.88rem;text-decoration:underline}
+.mini.rouge{color:var(--marge)}
+.badge{display:inline-block;font-size:.78rem;padding:1px 7px;border-radius:999px;border:1px solid currentColor;margin-left:6px}
+.badge.hors{color:var(--attention)}
+.badge.encours{color:var(--encre-2)}
+.vide{color:var(--doux);text-align:center;padding:30px 10px}
+
+/* Synthèse */
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--carte);border:1px solid var(--ligne);border-left:4px solid var(--encre);border-radius:8px;padding:12px}
+.kpi b{display:block;font-size:1.5rem;color:var(--encre);line-height:1.2}
+.kpi span{color:var(--doux);font-size:.88rem}
+.kpi.alerte{border-left-color:var(--attention)}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{padding:7px 8px;border-bottom:1px solid var(--ligne);text-align:left;vertical-align:middle}
+th{color:var(--doux);font-weight:700;font-size:.85rem}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr.total td{font-weight:700;border-top:2px solid var(--texte)}
+.jauge{height:10px;border-radius:5px;background:var(--fond);min-width:60px;overflow:hidden}
+.jauge i{display:block;height:100%}
+.texte-officiel{border-left:3px solid var(--marge);padding:4px 0 4px 12px;color:var(--texte)}
+.tablewrap{overflow-x:auto}
+
+/* Réglages */
+.taches-perso li{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed var(--ligne)}
+.taches-perso ul{list-style:none;padding:0;margin:6px 0 12px}
+
+@media (max-width:640px){
+  .ligne2,.filtres{grid-template-columns:1fr}
+  .missions{grid-template-columns:1fr 1fr}
+  header.cahier{padding-left:58px}
+  .cahier h1{font-size:1.2rem}
+  th.cache,td.cache{display:none}
+}
+@media (prefers-reduced-motion:no-preference){
+  .toast{animation:monte .18s ease-out}
+  @keyframes monte{from{transform:translate(-50%,10px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+}
+@media print{
+  nav.onglets,.no-print,#saisir,#journal,#reglages{display:none!important}
+  #synthese{display:block!important}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+<header class="cahier">
+  <h1>Suivi du référent numérique</h1>
+  <p>Fathey ZEGHOUDI, Collège Marcel Pagnol, Bonnières-sur-Seine. Réseau, ENT, GAR, Pix, site et écrans.</p>
+  <div class="semaine" aria-live="polite">
+    <strong id="h-semaine">0h00</strong><span id="h-semaine-lib">noté cette semaine</span>
+    <strong id="h-total">0h00</strong><span>au total, avec les 36 semaines de permanences</span>
+  </div>
+</header>
+
+<nav class="onglets" role="tablist" aria-label="Sections">
+  <button role="tab" aria-selected="true" aria-controls="saisir" data-onglet="saisir">Saisir</button>
+  <button role="tab" aria-selected="false" aria-controls="journal" data-onglet="journal">Journal</button>
+  <button role="tab" aria-selected="false" aria-controls="synthese" data-onglet="synthese">Synthèse</button>
+  <button role="tab" aria-selected="false" aria-controls="reglages" data-onglet="reglages">Réglages et fichiers</button>
+</nav>
+
+<main>
+<!-- ============ SAISIR ============ -->
+<section id="saisir" role="tabpanel">
+  <div class="bloc rapide">
+    <div>
+      <b>Permanences du lundi et du mardi</b>
+      <p class="aide" id="perm-aide"></p>
+    </div>
+    <button class="btn" id="btn-perm" type="button">Ajouter une permanence en plus</button>
+  </div>
+
+  <form class="bloc" id="form" autocomplete="off">
+    <h2 id="form-titre">Nouvelle intervention</h2>
+
+    <div class="etape ligne2">
+      <div>
+        <label for="f-date">Date</label>
+        <input type="date" id="f-date" required>
+      </div>
+      <div>
+        <span class="titre" style="font-weight:700;display:block;margin-bottom:6px">Statut</span>
+        <div class="puces" id="f-statut" role="group" aria-label="Statut"></div>
+      </div>
+    </div>
+
+    <div class="etape">
+      <span class="titre">Mission</span>
+      <div class="missions" id="f-missions" role="group" aria-label="Mission"></div>
+    </div>
+
+    <div class="etape">
+      <label for="f-tache">Tâche</label>
+      <select id="f-tache" disabled><option>Choisissez d'abord une mission</option></select>
+      <div id="nouvelle-tache" hidden style="margin-top:8px">
+        <input type="text" id="f-tache-libre" placeholder="Décrivez la tâche, par ex. « Création des codes Pix pour les 5e »">
+        <label class="bascule" style="margin-top:8px"><input type="checkbox" id="f-garder" checked> L'ajouter à ma liste pour la prochaine fois</label>
+      </div>
+      <p class="aide">Les tâches que vous utilisez le plus remontent en haut de la liste.</p>
+    </div>
+
+    <div class="etape">
+      <label for="f-precision">Pour qui, quoi (facultatif)</label>
+      <input type="text" id="f-precision" list="liste-precisions" placeholder="Nom du collègue, classe, salle…">
+      <datalist id="liste-precisions"></datalist>
+    </div>
+
+    <div class="etape">
+      <span class="titre">Demandé par</span>
+      <div class="puces" id="f-demandeur" role="group" aria-label="Demandeur"></div>
+    </div>
+
+    <div class="etape">
+      <span class="titre">Durée</span>
+      <div class="puces" id="f-durees" role="group" aria-label="Durée"></div>
+      <div class="duree-perso">
+        <label for="f-h">Autre :</label>
+        <input type="number" id="f-h" min="0" max="23" placeholder="h" aria-label="Heures"> h
+        <input type="number" id="f-min" min="0" max="59" placeholder="min" aria-label="Minutes"> min
+      </div>
+    </div>
+
+    <div class="etape">
+      <label class="bascule"><input type="checkbox" id="f-hors" checked> Fait sur mon temps personnel (en dehors de mes cours)</label>
+      <p class="aide" id="hors-aide"></p>
+    </div>
+
+    <div class="etape">
+      <label for="f-remarque">Remarque (facultatif)</label>
+      <textarea id="f-remarque" rows="2"></textarea>
+    </div>
+
+    <p class="aide" id="form-erreur" role="alert" style="color:var(--marge)"></p>
+    <div class="actions">
+      <button class="btn" type="submit" id="btn-enregistrer">Enregistrer</button>
+      <button class="btn sec" type="button" id="btn-annuler" hidden>Annuler la modification</button>
+    </div>
+  </form>
+
+  <div class="bloc">
+    <h2>Dernières saisies</h2>
+    <div id="dernieres"></div>
+  </div>
+</section>
+
+<!-- ============ JOURNAL ============ -->
+<section id="journal" role="tabpanel" hidden>
+  <div class="filtres">
+    <select id="j-mission" aria-label="Filtrer par mission"></select>
+    <select id="j-mois" aria-label="Filtrer par mois"></select>
+    <input type="text" id="j-cherche" placeholder="Rechercher (nom, tâche…)" aria-label="Rechercher">
+  </div>
+  <p id="j-total" class="aide"></p>
+  <div id="j-liste"></div>
+</section>
+
+<!-- ============ SYNTHÈSE ============ -->
+<section id="synthese" role="tabpanel" hidden>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="bloc">
+    <h2>Temps par mission</h2>
+    <div class="tablewrap"><table id="t-missions"></table></div>
+    <p class="aide">Permanences : les 72 du lundi et du mardi (36 semaines) sont comptées d'office ; les permanences en plus viennent du journal.</p>
+  </div>
+
+  <div class="ligne2">
+    <div class="bloc">
+      <h2>Qui me sollicite</h2>
+      <div class="tablewrap"><table id="t-demandeurs"></table></div>
+    </div>
+    <div class="bloc">
+      <h2>Mois par mois</h2>
+      <div class="tablewrap"><table id="t-mois"></table></div>
+    </div>
+  </div>
+
+  <div class="bloc">
+    <h2>Ce que dit le texte sur l'IMP</h2>
+    <p class="texte-officiel">Circulaire n° 2015-058 du 29 avril 2015, point II-6 : la mission de référent pour les ressources et usages pédagogiques numériques est rémunérée par une IMP au « taux annuel de 1 250 € à 3 750 € en fonction de la charge effective de travail et du niveau d'expertise requis ». La circulaire prévoit aussi, pour cette fonction, la possibilité d'un allègement de service.</p>
+    <p id="imp-phrase"></p>
+  </div>
+
+  <div class="actions no-print">
+    <button class="btn" type="button" data-action="export">Télécharger en Excel</button>
+    <button class="btn sec" type="button" onclick="window.print()">Imprimer la synthèse</button>
+  </div>
+</section>
+
+<!-- ============ RÉGLAGES ============ -->
+<section id="reglages" role="tabpanel" hidden>
+  <div class="bloc">
+    <h2>Fichiers</h2>
+    <div class="actions">
+      <button class="btn" type="button" data-action="export">Télécharger en Excel</button>
+      <label class="btn sec" style="display:inline-flex;align-items:center">Importer un fichier Excel
+        <input type="file" id="imp-xlsx" accept=".xlsx,.xls" hidden></label>
+    </div>
+    <div class="actions" style="margin-top:10px"><button class="btn sec" type="button" id="btn-seed">Recharger mes interventions de départ (septembre-octobre et tickets)</button></div>
+    <p class="aide">L'import accepte le fichier « Suivi_Missions_Numeriques_2026-2027.xlsx » et les fichiers téléchargés depuis cette page. Les lignes déjà présentes ne sont pas recopiées deux fois.</p>
+    <hr style="border:0;border-top:1px solid var(--ligne);margin:14px 0">
+    <div class="actions">
+      <button class="btn sec" type="button" id="btn-sauve">Faire une sauvegarde</button>
+      <label class="btn sec" style="display:inline-flex;align-items:center">Restaurer une sauvegarde
+        <input type="file" id="imp-json" accept=".json" hidden></label>
+    </div>
+    <p class="aide">Vos saisies restent dans ce navigateur, sur cet appareil : elles ne sont jamais envoyées sur GitHub. Pour passer du PC du collège à celui de la maison, faites une sauvegarde sur l'un et restaurez-la sur l'autre.</p>
+    <p class="aide" id="stockage-etat"></p>
+  </div>
+
+  <div class="bloc">
+    <h2>Paramètres de la synthèse</h2>
+    <div class="ligne2">
+      <div class="etape"><label for="p-debut">Début du suivi</label><input type="date" id="p-debut"></div>
+      <div class="etape"><label for="p-semaines">Semaines de cours dans l'année</label><input type="number" id="p-semaines" min="1"></div>
+      <div class="etape"><label for="p-imp">Montant annuel de mon IMP (€)</label><input type="number" id="p-imp" min="0" step="1"></div>
+      <div class="etape"><label for="p-perm">Durée d'une permanence (min)</label><input type="number" id="p-perm" min="1"><p class="aide">Les permanences du lundi et du mardi sont comptées d'office sur les 36 semaines de l'année (à partir du 7 septembre).</p></div>
+    </div>
+  </div>
+
+
+  <div class="bloc">
+    <h2>Mes listes de tâches</h2>
+    <p class="aide" style="margin-top:0">Les tâches que vous avez ajoutées vous-même. Les tâches proposées par défaut restent toujours disponibles.</p>
+    <div class="taches-perso" id="taches-perso"></div>
+  </div>
+
+  <div class="bloc">
+    <h2>Tout effacer</h2>
+    <p class="aide" style="margin-top:0">Supprime toutes les saisies de ce navigateur. Téléchargez d'abord le fichier Excel ou une sauvegarde.</p>
+    <button class="btn danger" type="button" id="btn-effacer">Effacer toutes les saisies</button>
+  </div>
+</section>
+</main>
+
+<div id="toast" class="toast" hidden role="status"></div>
+
+<script>
+"use strict";
+/* ---------------- Référentiels ---------------- */
+const MISSIONS = [
+  {id:"Réseau pédagogique & licences", court:"Réseau", c:"#2F6FDE"},
+  {id:"ENT (NEO) & comptes", court:"ENT", c:"#0E9F8E"},
+  {id:"GAR & ressources numériques", court:"GAR", c:"#8B5CF6"},
+  {id:"Pix", court:"Pix", c:"#E0499B"},
+  {id:"Écrans dynamiques", court:"Écrans", c:"#F08C00"},
+  {id:"Site internet & communication", court:"Site", c:"#5C7CFA"},
+  {id:"Matériel & maintenance", court:"Matériel", c:"#7A8699"},
+  {id:"Assistance & dépannage", court:"Dépannage", c:"#D6453D"},
+  {id:"Projet PILOTIS", court:"PILOTIS", c:"#2B8A3E"},
+  {id:"Permanences numériques", court:"Permanence", c:"#A0712B"},
+];
+const DEMANDEURS = ["Collègue","Direction","Secrétariat / gestion","Vie scolaire (CPE)","CDI","Élève / famille","SYN / Département","Initiative du référent"];
+const STATUTS = ["Terminé","En cours","À faire"];
+const DUREES = [5,10,15,20,30,45,60,90,120];
+const TACHES_DEFAUT = {
+  "Réseau pédagogique & licences":["Codes réseau élèves (création / réinitialisation)","Ticket SYN réseau (Synchronista)","Code réseau nouveau professeur / remplaçant","Comptes et maintenance SambaEdu","Licences (Office, Pulp Info…)","Information ou connexion Wi-Fi","Installation de raccourcis / logiciels sur les postes","Ouverture de port / application réseau","Vérification des fiches réseau"],
+  "ENT (NEO) & comptes":["Code ENT élève","Code ENT responsables (parents)","Code ENT nouveau professeur / remplaçant","Réinitialisation d'un compte ENT","Rattachement à l'établissement","Liaison ENT – PRONOTE","Requête à la cellule ENT","Messagerie / contrôle parental","Réponse au secrétariat ou à la direction sur des comptes","Publication d'une actualité ENT"],
+  "GAR & ressources numériques":["Affectation de ressources GAR (Médiacentre)","Renouvellement / distribution des codes produits","Genially : comptes et mise en place","Problème de licences","Accès Médiacentre élèves","Analyse de devis / renouvellement d'abonnement"],
+  "Pix":["Import SIECLE dans Pix Orga","Invitation de professeurs dans Pix Orga","Message de rappel Pix sur PRONOTE","Réponse à un collègue sur Pix","Parcours de rentrée","Attestations 6e","Certification Pix 3e","Récupération d'attestations"],
+  "Écrans dynamiques":["Mise en ligne d'une affiche","Retrait d'une affiche","Création d'une affiche","Paramétrage (durée d'affichage…)","Ticket / SAV écran","Image à refaire"],
+  "Site internet & communication":["Mise à jour du site","Publication d'une information","Création d'affiche (site, ENT)"],
+  "Matériel & maintenance":["Ticket SYN (signalement d'un collègue transmis à Synchronista)","Demande de remplacement de vidéoprojecteur","Demande de renouvellement de matériel","Ticket au Département (SYN)","Passage du technicien SYN","Panne PC / écran"],
+  "Assistance & dépannage":["Problème de connexion Internet","Connexion Wi-Fi sur ordinateur personnel","Problème d'accès (messagerie académique…)","Accompagnement sur un outil","Traitement d'un ticket"],
+  "Projet PILOTIS":["Audit de l'établissement (salle par salle)","Mail à l'équipe / consultation des collègues","Recueil des besoins (fichier Excel)","Mail de questions au Département","Réunion (Teams)","Réponse aux questions du Département","Vérification suite à une réunion","Lecture / revue du catalogue logiciel","Audit et recueil des besoins"],
+  "Permanences numériques":["Permanence supplémentaire"],
+};
+const SEED = [{"date":"2026-09-02","mission":"GAR & ressources numériques","tache":"Analyse des devis et proposition de renouvellement Genially (formule CAMPUS)","precision":"","demandeur":"Initiative du référent","minutes":90,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-07","mission":"Réseau pédagogique & licences","tache":"Comptes 6e et maintenance SambaEdu (fiches et création des accès, purge AD, scripts)","precision":"","demandeur":"Initiative du référent","minutes":300,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-07","mission":"Écrans dynamiques","tache":"Rencontres parents : création de l'affiche, écran d'information et diffusion sur les écrans dynamiques","precision":"","demandeur":"","minutes":60,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-07","mission":"ENT (NEO) & comptes","tache":"Codes ENT ULIS et modification de comptes utilisateurs","precision":"","demandeur":"","minutes":30,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-07","mission":"Assistance & dépannage","tache":"Problème de connexion Internet – salle de M. COUPRIE","precision":"","demandeur":"Collègue","minutes":30,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-07","mission":"Assistance & dépannage","tache":"Aide à la connexion Wi-Fi sur ordinateur personnel (Mme NOMBELA)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-07","mission":"ENT (NEO) & comptes","tache":"Transmission des identifiants et accompagnement d'un nouvel enseignant (Mme BOUKHATEB)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-07","mission":"GAR & ressources numériques","tache":"Mise en place des applications professeurs et élèves dans le GAR","precision":"","demandeur":"Initiative du référent","minutes":120,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-07","mission":"Écrans dynamiques","tache":"Ticket SYN : relance des écrans d'affichage dynamique (certains bloquent ou ne s'allument plus, écran de la cantine en panne)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260907_00040"},
+{"date":"2026-09-07","mission":"Réseau pédagogique & licences","tache":"Ticket SYN : PC professeur sans accès Internet en salle 006 (prise RJ45 I38)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260907_00042"},
+{"date":"2026-09-07","mission":"Matériel & maintenance","tache":"Ticket SYN : vidéoprojecteur qui s'éteint au bout de 3 s, salle 07 (ABDELLAH)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260907_00101"},
+{"date":"2026-09-07","mission":"Projet PILOTIS","tache":"PILOTIS : mail à l'équipe pour présenter le projet et lancer la consultation sur les besoins logiciels et matériels","precision":"","demandeur":"Initiative du référent","minutes":45,"statut":"Terminé","hors":true,"remarque":"Estimation – consultation menée du 7 au 17/09"},
+{"date":"2026-09-08","mission":"Assistance & dépannage","tache":"Traitement d'un ticket et vérification d'un problème réseau/Internet (Mme NOMBELA)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-08","mission":"ENT (NEO) & comptes","tache":"Génération et transmission des codes ENT élèves (3D) et responsables (Mme NIDELET)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-08","mission":"Réseau pédagogique & licences","tache":"Ticket SYN : réinitialisation des codes réseau 5e, 4e et 3e (avec fichier)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260908_00066"},
+{"date":"2026-09-08","mission":"Matériel & maintenance","tache":"Ticket SYN : changement d'ampoule du vidéoprojecteur, salle 214 (YVANOFF)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260908_00072"},
+{"date":"2026-09-10","mission":"Réseau pédagogique & licences","tache":"Installation des raccourcis Évaluations nationales sur tous les postes des 2 salles informatiques","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-11","mission":"Réseau pédagogique & licences","tache":"Réinitialisation des codes d'accès réseau des élèves de 4e","precision":"","demandeur":"Élève / famille","minutes":30,"statut":"Terminé","hors":true,"remarque":"Jour off (vendredi)"},
+{"date":"2026-09-14","mission":"ENT (NEO) & comptes","tache":"Compte ENT IOSIF : demande de rattachement à l'établissement","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-14","mission":"Écrans dynamiques","tache":"Remplacement d'écran : ouverture de ticket (1/2)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-14","mission":"Écrans dynamiques","tache":"Remplacement d'écran : ouverture de ticket (2/2)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-14","mission":"Écrans dynamiques","tache":"Demande de réparation des écrans dynamiques (suivi SAV)","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"En cours","hors":true,"remarque":"Durée à compléter"},
+{"date":"2026-09-14","mission":"ENT (NEO) & comptes","tache":"Assistance et renvoi des identifiants ENT (Mme ERGUN)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-14","mission":"GAR & ressources numériques","tache":"Vérification et résolution des accès Médiacentre (Pix, Pearltrees) pour des élèves de 3E (M. BRODU)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-14","mission":"Assistance & dépannage","tache":"Accompagnement sur l'accès Premium Wooflash via l'Académie de Versailles (M. COUPRIE)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Demande de service SYN : remplacement du vidéoprojecteur de la salle 106 suite au passage de M. KHAMLA","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista S260914_00044 – refusé par SYN"},
+{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Ticket SYN : demande d'enceintes pour la salle 209 (Mme BERNARD)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00036"},
+{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Ticket SYN : écran défaillant en salle 207 (M. BENSAID)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00037 – doublon possible avec « Remplacement d'écran : ouverture de ticket » du 14/09"},
+{"date":"2026-09-14","mission":"Réseau pédagogique & licences","tache":"Ticket SYN : réinitialisation des codes réseau des classes de 4e","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00038"},
+{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Ticket SYN : vidéoprojecteur et postes élèves en panne, salle 008 (Mme LE MEUR, M. MICHAUD)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00039"},
+{"date":"2026-09-15","mission":"Site internet & communication","tache":"Mise à jour du site internet du collège","precision":"","demandeur":"","minutes":25,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-15","mission":"Matériel & maintenance","tache":"Ticket SYN : son, PC et vidéoprojecteur à renouveler (Mme MOUILLET)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260915_00068"},
+{"date":"2026-09-15","mission":"Matériel & maintenance","tache":"Ticket SYN : relance du remplacement du vidéoprojecteur de la salle 106 (demande de l'an dernier)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260915_00069"},
+{"date":"2026-09-15","mission":"Matériel & maintenance","tache":"Ticket SYN : remise en route du vidéoprojecteur, salle 005","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260915_00072"},
+{"date":"2026-09-17","mission":"ENT (NEO) & comptes","tache":"Gestion ENT et liaison PRONOTE (demande de la direction)","precision":"","demandeur":"Direction","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-17","mission":"Réseau pédagogique & licences","tache":"Codes réseau des élèves de 4e (évaluations nationales)","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-17","mission":"Pix","tache":"Récupération des attestations Pix déjà fournies en fin d'année","precision":"","demandeur":"Secrétariat / gestion","minutes":20,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-17","mission":"Projet PILOTIS","tache":"PILOTIS : relances et collecte des 20 retours des collègues, retranscription salle par salle","precision":"","demandeur":"Initiative du référent","minutes":90,"statut":"Terminé","hors":true,"remarque":"Estimation"},
+{"date":"2026-09-21","mission":"Écrans dynamiques","tache":"Demande d'affichage sur les écrans dynamiques (M. HUE)","precision":"","demandeur":"Vie scolaire (CPE)","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-21","mission":"Assistance & dépannage","tache":"Demande de code de l'administration sur boîte académique (cas complexe)","precision":"","demandeur":"Secrétariat / gestion","minutes":25,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-21","mission":"Réseau pédagogique & licences","tache":"Appel à Pulp Info pour les codes Office (licences)","precision":"","demandeur":"Initiative du référent","minutes":20,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-22","mission":"Site internet & communication","tache":"Création d'affiches pour le site et l'ENT (demande de la gestionnaire)","precision":"","demandeur":"Secrétariat / gestion","minutes":90,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-22","mission":"Écrans dynamiques","tache":"Affichage sur les écrans dynamiques (demande de la gestionnaire)","precision":"","demandeur":"Secrétariat / gestion","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-22","mission":"Réseau pédagogique & licences","tache":"Code réseau pour un professeur remplaçant (M. NAJI)","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-22","mission":"ENT (NEO) & comptes","tache":"Code ENT pour un remplaçant (M. LEFEVRE), 2e essai + message","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-22","mission":"Réseau pédagogique & licences","tache":"Codes réseau élève","precision":"","demandeur":"Élève / famille","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter"},
+{"date":"2026-09-22","mission":"Projet PILOTIS","tache":"PILOTIS : lecture du diaporama fourni et mail de 40 questions au Département","precision":"","demandeur":"Initiative du référent","minutes":165,"statut":"Terminé","hors":true,"remarque":"Estimation (lecture 45 min + rédaction 2h) – date à vérifier"},
+{"date":"2026-09-23","mission":"Pix","tache":"Réponse au mail de Mme NIDELET","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-23","mission":"ENT (NEO) & comptes","tache":"Réponse à la nouvelle professeure d'anglais après réinitialisation de son compte ENT","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-24","mission":"Pix","tache":"Invitation des nouveaux professeurs dans Pix Orga","precision":"","demandeur":"Initiative du référent","minutes":5,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-24","mission":"ENT (NEO) & comptes","tache":"Requête à la cellule ENT pour le code de M. BETRON","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-24","mission":"ENT (NEO) & comptes","tache":"Code ENT pour le remplaçant M. NAJI","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-24","mission":"Projet PILOTIS","tache":"Réunion Teams PILOTIS","precision":"","demandeur":"SYN / Département","minutes":135,"statut":"Terminé","hors":true,"remarque":"Sur jour de repos"},
+{"date":"2026-09-24","mission":"Réseau pédagogique & licences","tache":"Contact Pulp Info au sujet des licences du collège","precision":"","demandeur":"Initiative du référent","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-27","mission":"Projet PILOTIS","tache":"Suite de la réunion Teams : vérification des différentes demandes formulées","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":"Dimanche"},
+{"date":"2026-09-27","mission":"ENT (NEO) & comptes","tache":"Problème d'accès ENT de Mme MONTEIRO via la boîte mail académique","precision":"","demandeur":"Collègue","minutes":20,"statut":"Terminé","hors":true,"remarque":"Dimanche"},
+{"date":"2026-09-27","mission":"ENT (NEO) & comptes","tache":"Mail à la direction et au secrétariat : compte de Mme MONTEIRO et autorisation parentale","precision":"","demandeur":"Direction","minutes":20,"statut":"Terminé","hors":true,"remarque":"Dimanche"},
+{"date":"2026-09-28","mission":"ENT (NEO) & comptes","tache":"Réponse code ENT à Cristina","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-28","mission":"ENT (NEO) & comptes","tache":"Actualité ENT : convention tablettes (demande de Mme RAGE)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-28","mission":"Réseau pédagogique & licences","tache":"Information Wi-Fi (« PDE »)","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":"Libellé d'origine peu lisible : à préciser"},
+{"date":"2026-09-29","mission":"Pix","tache":"Import Pix : demande du fichier SIECLE et téléversement","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-09-29","mission":"Matériel & maintenance","tache":"Passage de M. KHAMLA (SYN) au collège et point sur les actions réalisées","precision":"","demandeur":"SYN / Département","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite (non datée dans l'original) – durée à compléter"},
+{"date":"2026-09-29","mission":"Matériel & maintenance","tache":"Échange de SMS pour régler le problème d'écran de M. COUPRIE","precision":"","demandeur":"Collègue","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite – nom à vérifier (« Couri ») – durée à compléter"},
+{"date":"2026-09-29","mission":"ENT (NEO) & comptes","tache":"Réponse au mail du secrétariat concernant deux comptes","precision":"","demandeur":"Secrétariat / gestion","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite – durée à compléter"},
+{"date":"2026-09-29","mission":"Pix","tache":"Message de rappel Pix sur PRONOTE : point sur le parcours de rentrée","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite – durée à compléter"},
+{"date":"2026-09-30","mission":"Réseau pédagogique & licences","tache":"Vérification des fiches réseau (salle de permanence, salle ULIS, CDI)","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter"},
+{"date":"2026-09-30","mission":"Site internet & communication","tache":"Affichage de la permanence numérique du collège","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter"},
+{"date":"2026-09-30","mission":"ENT (NEO) & comptes","tache":"Code élève et ticket pour un élève de 6E","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":"Date déduite"},
+{"date":"2026-09-30","mission":"Projet PILOTIS","tache":"Réponse par mail aux questions de M. MARTINS (SYN)","precision":"","demandeur":"SYN / Département","minutes":20,"statut":"Terminé","hors":true,"remarque":"Date déduite"},
+{"date":"2026-10-01","mission":"Pix","tache":"Réponse aux questions de Mme NOMBELA","precision":"","demandeur":"Collègue","minutes":30,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-10-01","mission":"Écrans dynamiques","tache":"Retrait d'une affiche à la demande de M. HUE","precision":"","demandeur":"Vie scolaire (CPE)","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter"},
+{"date":"2026-10-01","mission":"GAR & ressources numériques","tache":"Affectation GAR Pearltrees et autres ressources : problème de licences, traitement un par un","precision":"","demandeur":"Initiative du référent","minutes":20,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-10-01","mission":"Projet PILOTIS","tache":"PILOTIS : audit de l'établissement salle par salle (44 espaces : postes, matériel raccordé, prises réseau, logiciels utilisés)","precision":"","demandeur":"SYN / Département","minutes":360,"statut":"Terminé","hors":true,"remarque":"Estimation (environ 8 min par salle) – audit de septembre à début octobre, dernier relevé le 01/10"},
+{"date":"2026-10-04","mission":"Pix","tache":"Point Pix : message PRONOTE et synthèse","precision":"","demandeur":"Initiative du référent","minutes":45,"statut":"Terminé","hors":true,"remarque":"Dimanche"},
+{"date":"2026-10-05","mission":"Projet PILOTIS","tache":"Lecture et revue du catalogue logiciel PILOTIS","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-10-05","mission":"Matériel & maintenance","tache":"Ticket SYN : vidéoprojecteur salle 215, ampoule usée et surchauffe (M. GRENIER) – nettoyage du filtre, remplacement de l'ampoule","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I261005_00056 – intervention planifiée par SYN"},
+{"date":"2026-10-06","mission":"Écrans dynamiques","tache":"Réduction du temps d'affichage sur les écrans dynamiques","precision":"","demandeur":"","minutes":20,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-10-06","mission":"Écrans dynamiques","tache":"Message de POULINGUE : image à refaire","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-10-06","mission":"ENT (NEO) & comptes","tache":"Résolution du problème PRONOTE de M. HERRAN (2 jours de suite)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-10-07","mission":"ENT (NEO) & comptes","tache":"Nouvel élève entrant (6B) : code ENT + mail","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":"Classe à vérifier (« 65 B » dans l'original)"},
+{"date":"2026-10-07","mission":"Réseau pédagogique & licences","tache":"Nouvel élève entrant (6B) : code réseau + mail","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":"Classe à vérifier (« 65 B » dans l'original)"},
+{"date":"2026-10-07","mission":"ENT (NEO) & comptes","tache":"Récréation du mercredi : demande de codes Pix / ENT présentée par la direction","precision":"","demandeur":"Direction","minutes":20,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-10-07","mission":"Projet PILOTIS","tache":"PILOTIS : réalisation du fichier de recueil des besoins (besoins argumentés, retours par salle, croisement avec le catalogue SYN de 86 applications, dotation cible par salle ; versions interne et SYN)","precision":"","demandeur":"SYN / Département","minutes":480,"statut":"Terminé","hors":true,"remarque":"Estimation – fichier commencé le 18/09, finalisé le 07/10 vers minuit"},
+{"date":"2026-10-08","mission":"GAR & ressources numériques","tache":"Mise en place de Genially pour les professeurs (GENIUS)","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-10-08","mission":"Réseau pédagogique & licences","tache":"Ouverture du port AMON pour BCDI","precision":"","demandeur":"CDI","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-10-08","mission":"Écrans dynamiques","tache":"Mise en ligne d'une affiche du CDI","precision":"","demandeur":"CDI","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
+{"date":"2026-10-08","mission":"Projet PILOTIS","tache":"PILOTIS : envoi du fichier de recueil des besoins par mail","precision":"","demandeur":"SYN / Département","minutes":20,"statut":"Terminé","hors":true,"remarque":"Estimation"},
+{"date":"2026-10-09","mission":"ENT (NEO) & comptes","tache":"Messagerie parents ENT : contrôle parental","precision":"","demandeur":"Élève / famille","minutes":5,"statut":"Terminé","hors":true,"remarque":"Vendredi"},
+{"date":"2026-10-09","mission":"GAR & ressources numériques","tache":"Message mail pour Genially","precision":"","demandeur":"Initiative du référent","minutes":15,"statut":"Terminé","hors":true,"remarque":"Vendredi"},
+{"date":"2026-10-09","mission":"GAR & ressources numériques","tache":"Gestion des comptes Genially","precision":"","demandeur":"Initiative du référent","minutes":20,"statut":"Terminé","hors":true,"remarque":"Date déduite – vendredi"},
+{"date":"2026-10-09","mission":"Pix","tache":"Message de rappel Pix sur PRONOTE : point sur le parcours de rentrée","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Vendredi – doublon possible avec le 29/09 – durée à compléter"}];
+const SEED_VERSION = 3;
+const REMPLACEES_V2 = ["Demande de remplacement du vidéoprojecteur de la salle 106", "Demande de renouvellement de matériel (PC, VP, enceintes) pour Mme MOUILLET : transmission et suivi auprès de M. KHAMLA (SYN)"];
+const PARAMS_DEFAUT = {debut:"2026-09-01", semaines:36, imp:2500, perm:20};
+// Calendrier officiel 2026-2027, zone C (Versailles) : départ le samedi, reprise le lundi
+const VACANCES = [["2026-10-17","2026-11-02"],["2026-12-19","2027-01-04"],["2027-02-06","2027-02-22"],["2027-04-03","2027-04-19"]];
+const FIN_ANNEE = "2027-07-03";
+const CLE = "rupn-suivi-v1";
+
+/* ---------------- État et stockage ---------------- */
+let etat = {entrees:[], taches:{}, params:{...PARAMS_DEFAUT}};
+let stockageOK = true, premiereFois = false, majSeed = 0;
+function charger(){
+  try{
+    const brut = localStorage.getItem(CLE);
+    if(brut){ const o = JSON.parse(brut); etat.entrees = o.entrees||[]; etat.taches = o.taches||{}; etat.params = {...PARAMS_DEFAUT, ...(o.params||{})}; }
+    else { etat.entrees = SEED.map(e => ({id:uid(), ...e})); premiereFois = true; etat.seedVersion = SEED_VERSION; }
+    // mise à jour des interventions de départ (v2 : tickets Synchronista)
+    if((etat.seedVersion || 1) < SEED_VERSION){
+      if((etat.seedVersion || 1) < 2) etat.entrees = etat.entrees.filter(e => !REMPLACEES_V2.includes(e.tache));
+      let n = 0; SEED.forEach(e => { if(!doublon(e)){ etat.entrees.push({id:uid(), ...e}); n++; } });
+      etat.seedVersion = SEED_VERSION; majSeed = n;
+    }
+    // les permanences régulières sont désormais comptées d'office : on retire les anciennes lignes
+    etat.entrees = etat.entrees.filter(e => !(e.mission === "Permanences numériques" && e.tache === "Permanence récréation"));
+    // les permanences sont prises sur la récréation : c'est aussi du temps personnel
+    etat.entrees.forEach(e => { if(e.mission === "Permanences numériques") e.hors = true; });
+  }catch(e){ stockageOK = false; }
+}
+function sauver(){
+  try{ localStorage.setItem(CLE, JSON.stringify(etat)); stockageOK = true; }
+  catch(e){ stockageOK = false; }
+  majStockage();
+}
+function majStockage(){
+  const el = document.getElementById("stockage-etat");
+  el.textContent = stockageOK
+    ? `${etat.entrees.length} saisies enregistrées dans ce navigateur.`
+    : "Ce navigateur bloque l'enregistrement (navigation privée ?) : vos saisies seront perdues à la fermeture. Téléchargez le fichier Excel avant de quitter.";
+  el.style.color = stockageOK ? "" : "var(--marge)";
+}
+
+/* ---------------- Outils ---------------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const mis = id => MISSIONS.find(m => m.id === id) || {id, court:id, c:"#999"};
+function fmt(min){ min = Math.round(min||0); const h = Math.floor(min/60), m = min%60; return `${h}h${String(m).padStart(2,"0")}`; }
+function fmtCourt(min){ if(!min) return "durée ?"; return min < 60 ? `${min} min` : fmt(min); }
+function iso(d){ const z = new Date(d.getTime() - d.getTimezoneOffset()*60000); return z.toISOString().slice(0,10); }
+const auj = () => iso(new Date());
+function dateFr(s, long){ const d = new Date(s+"T12:00:00"); return d.toLocaleDateString("fr-FR", long ? {weekday:"long", day:"numeric", month:"long", year:"numeric"} : {day:"2-digit", month:"2-digit", year:"numeric"}); }
+function lundiDe(s){ const d = new Date(s+"T12:00:00"); const j = (d.getDay()+6)%7; d.setDate(d.getDate()-j); return iso(d); }
+const somme = arr => arr.reduce((a,e) => a + (e.minutes||0), 0);
+function toast(msg, annuler){
+  const t = $("#toast"); t.innerHTML = `<span>${esc(msg)}</span>`;
+  if(annuler){ const b = document.createElement("button"); b.textContent = "Annuler"; b.onclick = () => { annuler(); t.hidden = true; }; t.appendChild(b); }
+  t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(() => t.hidden = true, 5000);
+}
+
+/* ---------------- Formulaire ---------------- */
+const f = {mission:null, demandeur:null, minutes:null, statut:"Terminé", edition:null};
+
+function puces(conteneur, valeurs, getSel, setSel, libelle){
+  const el = $(conteneur); el.innerHTML = "";
+  valeurs.forEach(v => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "puce";
+    b.textContent = libelle ? libelle(v) : v; b.setAttribute("aria-pressed", String(getSel() === v));
+    b.onclick = () => { setSel(getSel() === v ? null : v); puces(conteneur, valeurs, getSel, setSel, libelle); apresChoix(); };
+    el.appendChild(b);
+  });
+}
+function dessinerMissions(){
+  const el = $("#f-missions"); el.innerHTML = "";
+  MISSIONS.forEach(m => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "mission";
+    b.innerHTML = `<i style="background:${m.c}"></i>${esc(m.court)}`; b.title = m.id;
+    b.setAttribute("aria-pressed", String(f.mission === m.id));
+    b.onclick = () => { f.mission = m.id; dessinerMissions(); remplirTaches(); majHorsAide(); };
+    el.appendChild(b);
+  });
+}
+function tachesDe(mission){
+  const base = [...(TACHES_DEFAUT[mission]||[]), ...(etat.taches[mission]||[])];
+  const uniques = [...new Set(base)];
+  const compte = {};
+  etat.entrees.forEach(e => { if(e.mission === mission) compte[e.tache] = (compte[e.tache]||0) + 1; });
+  return uniques.map((t,i) => ({t, n:compte[t]||0, i})).sort((a,b) => b.n - a.n || a.i - b.i);
+}
+function remplirTaches(selection){
+  const sel = $("#f-tache");
+  if(!f.mission){ sel.disabled = true; sel.innerHTML = "<option>Choisissez d'abord une mission</option>"; return; }
+  sel.disabled = false;
+  const liste = tachesDe(f.mission);
+  sel.innerHTML = `<option value="">Choisir une tâche…</option>` +
+    liste.map(o => `<option value="${esc(o.t)}">${esc(o.t)}${o.n ? `  (${o.n}×)` : ""}</option>`).join("") +
+    `<option value="__autre">➕ Autre tâche (l'écrire)…</option>`;
+  if(selection){
+    if(liste.some(o => o.t === selection)) sel.value = selection;
+    else { sel.value = "__autre"; $("#f-tache-libre").value = selection; $("#f-garder").checked = false; }
+  }
+  if(f.mission === "Permanences numériques" && !selection){ sel.value = "Permanence supplémentaire"; if(!f.minutes){ f.minutes = +etat.params.perm || 20; dessinerDurees(); } }
+  $("#nouvelle-tache").hidden = sel.value !== "__autre";
+}
+$("#f-tache").addEventListener("change", e => { $("#nouvelle-tache").hidden = e.target.value !== "__autre"; if(e.target.value === "__autre") $("#f-tache-libre").focus(); });
+
+function dessinerDurees(){
+  puces("#f-durees", DUREES, () => f.minutes, v => { f.minutes = v; $("#f-h").value = ""; $("#f-min").value = ""; }, v => fmtCourt(v));
+}
+["#f-h","#f-min"].forEach(s => $(s).addEventListener("input", () => {
+  const h = +$("#f-h").value || 0, m = +$("#f-min").value || 0;
+  f.minutes = (h*60 + m) || null;
+  puces("#f-durees", DUREES, () => f.minutes, v => { f.minutes = v; $("#f-h").value = ""; $("#f-min").value = ""; }, v => fmtCourt(v));
+}));
+function dessinerDemandeurs(){ puces("#f-demandeur", DEMANDEURS, () => f.demandeur, v => f.demandeur = v); }
+function dessinerStatut(){ puces("#f-statut", STATUTS, () => f.statut, v => f.statut = v || "Terminé"); }
+function apresChoix(){}
+
+function majHorsAide(){
+  if(!f.edition) $("#f-hors").checked = true;
+  $("#hors-aide").textContent = "Coché d'office : en classe vous faites cours, et les permanences sont prises sur votre récréation.";
+}
+
+function remplirPrecisions(){
+  const vus = [...new Set(etat.entrees.map(e => e.precision).filter(Boolean))].slice(-200);
+  $("#liste-precisions").innerHTML = vus.map(v => `<option value="${esc(v)}">`).join("");
+}
+
+function reinitForm(){
+  f.mission = null; f.demandeur = null; f.minutes = null; f.statut = "Terminé"; f.edition = null;
+  $("#f-date").value = auj(); $("#f-precision").value = ""; $("#f-remarque").value = ""; $("#f-tache-libre").value = "";
+  $("#f-h").value = ""; $("#f-min").value = ""; $("#f-hors").checked = true; $("#f-garder").checked = true;
+  $("#form-titre").textContent = "Nouvelle intervention"; $("#btn-enregistrer").textContent = "Enregistrer"; $("#btn-annuler").hidden = true;
+  $("#form-erreur").textContent = "";
+  dessinerMissions(); remplirTaches(); dessinerDemandeurs(); dessinerDurees(); dessinerStatut(); majHorsAide();
+}
+$("#btn-annuler").onclick = reinitForm;
+
+$("#form").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const err = $("#form-erreur");
+  let tache = $("#f-tache").value;
+  if(tache === "__autre") tache = $("#f-tache-libre").value.trim();
+  if(!$("#f-date").value) return err.textContent = "Indiquez la date.";
+  if(!f.mission) return err.textContent = "Choisissez une mission.";
+  if(!tache) return err.textContent = "Choisissez ou écrivez une tâche.";
+  if(!f.minutes) return err.textContent = "Indiquez une durée.";
+  err.textContent = "";
+  if($("#f-tache").value === "__autre" && $("#f-garder").checked){
+    const l = etat.taches[f.mission] = etat.taches[f.mission] || [];
+    if(!l.includes(tache) && !(TACHES_DEFAUT[f.mission]||[]).includes(tache)) l.push(tache);
+  }
+  const e = {
+    id: f.edition || uid(), date: $("#f-date").value, mission: f.mission, tache,
+    precision: $("#f-precision").value.trim(), demandeur: f.demandeur || "", minutes: f.minutes,
+    statut: f.statut, hors: $("#f-hors").checked, remarque: $("#f-remarque").value.trim()
+  };
+  if(f.edition){
+    const i = etat.entrees.findIndex(x => x.id === f.edition); if(i >= 0) etat.entrees[i] = e;
+    toast("Intervention modifiée.");
+  } else {
+    etat.entrees.push(e);
+    toast(`Enregistré : ${mis(e.mission).court}, ${fmtCourt(e.minutes)}.`, () => { etat.entrees = etat.entrees.filter(x => x.id !== e.id); sauver(); toutRedessiner(); });
+  }
+  sauver(); reinitForm(); toutRedessiner();
+});
+
+function editer(id){
+  const e = etat.entrees.find(x => x.id === id); if(!e) return;
+  ouvrir("saisir");
+  f.edition = id; f.mission = e.mission; f.demandeur = e.demandeur || null; f.minutes = e.minutes || null; f.statut = e.statut || "Terminé";
+  $("#f-date").value = e.date; $("#f-precision").value = e.precision || ""; $("#f-remarque").value = e.remarque || ""; $("#f-hors").checked = !!e.hors;
+  $("#f-h").value = ""; $("#f-min").value = "";
+  if(e.minutes && !DUREES.includes(e.minutes)){ $("#f-h").value = Math.floor(e.minutes/60) || ""; $("#f-min").value = e.minutes % 60 || ""; }
+  dessinerMissions(); remplirTaches(e.tache); dessinerDemandeurs(); dessinerDurees(); dessinerStatut();
+  $("#form-titre").textContent = `Modifier l'intervention du ${dateFr(e.date)}`; $("#btn-enregistrer").textContent = "Enregistrer la modification"; $("#btn-annuler").hidden = false;
+  $("#hors-aide").textContent = "";
+  $("#form").scrollIntoView({behavior:"smooth", block:"start"});
+}
+function supprimer(id, bouton){
+  if(bouton.dataset.arme !== "1"){ bouton.dataset.arme = "1"; bouton.textContent = "Confirmer ?"; setTimeout(() => { bouton.dataset.arme = ""; bouton.textContent = "Supprimer"; }, 3000); return; }
+  const e = etat.entrees.find(x => x.id === id);
+  etat.entrees = etat.entrees.filter(x => x.id !== id); sauver(); toutRedessiner();
+  toast("Intervention supprimée.", () => { etat.entrees.push(e); sauver(); toutRedessiner(); });
+}
+
+/* Permanence supplémentaire en un clic */
+$("#btn-perm").onclick = () => {
+  const e = {id:uid(), date:auj(), mission:"Permanences numériques", tache:"Permanence supplémentaire", precision:"", demandeur:"", minutes:+etat.params.perm || 20, statut:"Terminé", hors:true, remarque:""};
+  etat.entrees.push(e); sauver(); toutRedessiner();
+  toast(`Permanence en plus notée (${fmtCourt(e.minutes)}). « Modifier » permet de changer la date ou la durée.`, () => { etat.entrees = etat.entrees.filter(x => x.id !== e.id); sauver(); toutRedessiner(); });
+};
+
+/* ---------------- Rendu d'une ligne ---------------- */
+function ligneHTML(e){
+  const m = mis(e.mission);
+  const meta = [m.court, e.demandeur, e.precision].filter(Boolean).map(esc).join(" · ");
+  return `<div class="entree">
+    <div class="barre" style="background:${m.c}"></div>
+    <div><div class="t">${esc(e.tache)}${e.statut && e.statut !== "Terminé" ? `<span class="badge encours">${esc(e.statut)}</span>` : ""}</div>
+      <div class="m">${meta}${e.remarque ? ` · <i>${esc(e.remarque)}</i>` : ""}</div>
+      <div><button class="mini" data-edit="${e.id}">Modifier</button><button class="mini rouge" data-suppr="${e.id}">Supprimer</button></div></div>
+    <div class="d">${e.minutes ? fmtCourt(e.minutes) : '<span style="color:var(--attention)">durée ?</span>'}</div>
+  </div>`;
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if(!b) return;
+  if(b.dataset.edit) editer(b.dataset.edit);
+  if(b.dataset.suppr) supprimer(b.dataset.suppr, b);
+  if(b.dataset.action === "export") exporterExcel();
+});
+
+function dessinerDernieres(){
+  const l = [...etat.entrees].reverse().slice(0,5);
+  $("#dernieres").innerHTML = l.length ? l.map(e => `<div class="aide" style="margin:10px 0 2px">${dateFr(e.date)}</div>` + ligneHTML(e)).join("")
+    : `<p class="vide">Aucune saisie pour l'instant. Choisissez une mission ci-dessus, ou importez votre fichier Excel dans « Réglages et fichiers ».</p>`;
+}
+
+/* ---------------- Journal ---------------- */
+function moisDe(s){ return s.slice(0,7); }
+function nomMois(k){ const d = new Date(k+"-01T12:00:00"); const s = d.toLocaleDateString("fr-FR",{month:"long", year:"numeric"}); return s.charAt(0).toUpperCase()+s.slice(1); }
+function remplirFiltres(){
+  const jm = $("#j-mission"), jmo = $("#j-mois");
+  const vm = jm.value, vmo = jmo.value;
+  jm.innerHTML = `<option value="">Toutes les missions</option>` + MISSIONS.map(m => `<option value="${esc(m.id)}">${esc(m.court)}</option>`).join("");
+  const mois = [...new Set(etat.entrees.map(e => moisDe(e.date)))].sort().reverse();
+  jmo.innerHTML = `<option value="">Tous les mois</option>` + mois.map(k => `<option value="${k}">${nomMois(k)}</option>`).join("");
+  jm.value = vm; jmo.value = mois.includes(vmo) ? vmo : "";
+}
+["#j-mission","#j-mois","#j-cherche"].forEach(s => $(s).addEventListener("input", dessinerJournal));
+function dessinerJournal(){
+  const fm = $("#j-mission").value, fmo = $("#j-mois").value, q = $("#j-cherche").value.trim().toLowerCase();
+  const l = etat.entrees.filter(e => (!fm || e.mission === fm) && (!fmo || moisDe(e.date) === fmo) &&
+    (!q || [e.tache,e.precision,e.demandeur,e.remarque,e.mission].join(" ").toLowerCase().includes(q)))
+    .sort((a,b) => b.date.localeCompare(a.date));
+  $("#j-total").textContent = `${l.length} intervention${l.length>1?"s":""}, ${fmt(somme(l))} au total.`;
+  if(!l.length){ $("#j-liste").innerHTML = `<p class="vide">Aucune intervention ne correspond à ces filtres.</p>`; return; }
+  let html = "", jour = null, bloc = [];
+  const flush = () => { if(jour){ html += `<div class="jour"><span>${dateFr(jour,true)}</span><span>${fmt(somme(bloc))}</span></div>` + bloc.map(ligneHTML).join(""); } };
+  l.forEach(e => { if(e.date !== jour){ flush(); jour = e.date; bloc = []; } bloc.push(e); }); flush();
+  $("#j-liste").innerHTML = html;
+}
+
+/* ---------------- Calculs de synthèse ---------------- */
+function semainesCours(debut, fin){ // semaines de cours entamées entre deux dates (vacances déduites)
+  let n = 0; const d = new Date(lundiDe(debut)+"T12:00:00"), f = new Date(fin+"T12:00:00");
+  for(; d <= f; d.setDate(d.getDate()+7)){
+    const s = iso(d); if(s >= FIN_ANNEE) break;
+    if(VACANCES.some(([a,b]) => s > a && s < b)) continue;
+    n++;
+  }
+  return n;
+}
+function calculs(){
+  const p = etat.params, E = etat.entrees, S = +p.semaines || 36, dureeP = +p.perm || 20, aujd = auj();
+  const journal = somme(E);
+  const semaines = Math.max(1, Math.min(S, semainesCours(p.debut, aujd)));
+  // permanences du lundi et du mardi : les 36 semaines de l'année sont comptées d'office
+  const permN = S*2, permMin = permN*dureeP, permAnN = permN, permAnMin = permMin;
+  const total = journal + permMin;
+  const pilotis = somme(E.filter(e => e.mission === "Projet PILOTIS"));
+  const rythme = (journal - pilotis)/semaines; // rythme courant : hors permanences et hors projet PILOTIS (ponctuel)
+  const projection = rythme*S + pilotis + permAnMin;
+  const hors = somme(E.filter(e => e.hors)) + permMin; // permanences prises sur la récréation
+  const sansDuree = E.filter(e => !e.minutes).length;
+  const parMission = MISSIONS.map(m => { const l = E.filter(e => e.mission === m.id); const reg = m.id === "Permanences numériques";
+    return {m, n:l.length + (reg ? permN : 0), min:somme(l) + (reg ? permMin : 0), hors:somme(l.filter(e => e.hors)) + (reg ? permMin : 0)}; });
+  const parDem = [...DEMANDEURS, ""].map(d => { const l = E.filter(e => (e.demandeur||"") === d); return {d: d || "Non renseigné", n:l.length, min:somme(l)}; });
+  const mois = [...new Set(E.map(e => moisDe(e.date)))].sort();
+  const parMois = mois.map(k => { const l = E.filter(e => moisDe(e.date) === k); return {k, n:l.length, min:somme(l)}; });
+  const imp = +p.imp || 0;
+  const tauxH = imp && projection ? imp/(projection/60) : null;
+  return {total, journal, dernier:aujd, semaines, rythme, projection, hors, sansDuree, parMission, parDem, parMois, imp, tauxH,
+          n:E.length, nTable:E.length + permN, permN, permMin, permAnN, permAnMin, S};
+}
+
+function dessinerEntete(){
+  const lundi = lundiDe(auj());
+  const sem = somme(etat.entrees.filter(e => e.date >= lundi && e.date <= auj()));
+  $("#h-semaine").textContent = fmt(sem);
+  const c = calculs();
+  $("#h-total").textContent = fmt(c.total);
+  $("#perm-aide").textContent = `Les ${c.permN} permanences de l'année (36 semaines à partir du 7 septembre) sont comptées d'office : ${fmt(c.permMin)}. Ce bouton sert seulement aux permanences en plus.`;
+}
+
+function dessinerSynthese(){
+  const c = calculs();
+  const k = [
+    [fmt(c.total), `comptées : journal depuis le ${dateFr(etat.params.debut)} + les 36 semaines de permanences`],
+    [String(c.n), "interventions notées au journal"],
+    [String(c.permN), `permanences de l'année comptées d'office (${fmt(c.permMin)}, lundi et mardi sur 36 semaines)`],
+    [fmt(c.hors), `faites sur mon temps personnel, en dehors de mes cours (${c.total ? Math.round(100*c.hors/c.total) : 0} %)`],
+    [fmt(c.rythme), `par semaine en moyenne, hors permanences et hors PILOTIS (${c.semaines} semaines de cours)`],
+    [fmt(c.projection), `sur l'année (rythme × 36 semaines + PILOTIS + permanences), soit ${(c.projection/60/(+etat.params.semaines||36)).toFixed(1).replace(".",",")} h par semaine`],
+    [c.tauxH ? c.tauxH.toFixed(2).replace(".",",")+" €/h" : "à renseigner", c.tauxH ? "ce que rapporte réellement l'IMP par heure" : "montant de l'IMP dans Réglages"],
+  ];
+  $("#kpis").innerHTML = k.map(([v,l]) => `<div class="kpi"><b>${v}</b><span>${esc(l)}</span></div>`).join("") +
+    (c.sansDuree ? `<div class="kpi alerte"><b>${c.sansDuree}</b><span>saisies sans durée, non comptées : à compléter dans le Journal</span></div>` : "");
+  const max = Math.max(1, ...c.parMission.map(x => x.min));
+  $("#t-missions").innerHTML = `<tr><th>Mission</th><th class="n">Interventions</th><th class="n">Temps</th><th class="n cache">Part</th><th class="n cache">Temps perso</th><th class="cache" style="width:28%"></th></tr>` +
+    c.parMission.map(x => `<tr><td><i style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${x.m.c};margin-right:6px"></i>${esc(x.m.id)}</td>
+      <td class="n">${x.n}</td><td class="n">${fmt(x.min)}</td><td class="n cache">${c.total ? Math.round(100*x.min/c.total) : 0} %</td><td class="n cache">${fmt(x.hors)}</td>
+      <td class="cache"><div class="jauge"><i style="width:${100*x.min/max}%;background:${x.m.c}"></i></div></td></tr>`).join("") +
+    `<tr class="total"><td>Total</td><td class="n">${c.nTable}</td><td class="n">${fmt(c.total)}</td><td class="n cache">100 %</td><td class="n cache">${fmt(c.hors)}</td><td class="cache"></td></tr>`;
+  $("#t-demandeurs").innerHTML = `<tr><th>Demandeur</th><th class="n">Nb</th><th class="n">Temps</th><th class="n">Part</th></tr>` +
+    c.parDem.filter(x => x.n).sort((a,b) => b.n - a.n).map(x => `<tr><td>${esc(x.d)}</td><td class="n">${x.n}</td><td class="n">${fmt(x.min)}</td><td class="n">${c.n ? Math.round(100*x.n/c.n) : 0} %</td></tr>`).join("");
+  $("#t-mois").innerHTML = `<tr><th>Mois</th><th class="n">Nb</th><th class="n">Temps</th></tr>` +
+    c.parMois.map(x => `<tr><td>${nomMois(x.k)}</td><td class="n">${x.n}</td><td class="n">${fmt(x.min)}</td></tr>`).join("");
+  $("#imp-phrase").innerHTML = c.tauxH
+    ? `Avec une IMP de <b>${c.imp.toLocaleString("fr-FR")} €</b>${({1250:" (taux 3)",2500:" (taux 4, soit « 2 IMP »)",3750:" (taux 5, le maximum)"})[c.imp] || ""} et une charge projetée de <b>${fmt(c.projection)}</b> sur l'année, la mission est rémunérée <b>${c.tauxH.toFixed(2).replace(".",",")} € de l'heure</b>.`
+    : `Renseignez le montant de votre IMP dans « Réglages et fichiers » pour calculer ce qu'elle représente par heure de travail réel.`;
+}
+
+/* ---------------- Réglages ---------------- */
+const PCHAMPS = {debut:"#p-debut", semaines:"#p-semaines", imp:"#p-imp", perm:"#p-perm"};
+function remplirParams(){ Object.entries(PCHAMPS).forEach(([k,s]) => $(s).value = etat.params[k] ?? ""); }
+Object.entries(PCHAMPS).forEach(([k,s]) => $(s).addEventListener("change", () => { etat.params[k] = $(s).value; sauver(); toutRedessiner(); }));
+
+function dessinerTachesPerso(){
+  const el = $("#taches-perso");
+  const blocs = MISSIONS.filter(m => (etat.taches[m.id]||[]).length);
+  if(!blocs.length){ el.innerHTML = `<p class="aide">Aucune pour l'instant. Choisissez « Autre tâche » dans le formulaire pour en ajouter.</p>`; return; }
+  el.innerHTML = blocs.map(m => `<b>${esc(m.court)}</b><ul>` + etat.taches[m.id].map((t,i) =>
+    `<li><span>${esc(t)}</span><button class="mini rouge" data-tdel="${esc(m.id)}|${i}">Retirer</button></li>`).join("") + `</ul>`).join("");
+  el.querySelectorAll("[data-tdel]").forEach(b => b.onclick = () => {
+    const [mid, i] = b.dataset.tdel.split("|"); etat.taches[mid].splice(+i,1); sauver(); dessinerTachesPerso(); remplirTaches();
+  });
+}
+
+
+$("#btn-effacer").onclick = function(){
+  if(this.dataset.arme !== "1"){ this.dataset.arme = "1"; this.textContent = "Cliquez encore pour tout effacer"; setTimeout(() => { this.dataset.arme = ""; this.textContent = "Effacer toutes les saisies"; }, 4000); return; }
+  const avant = etat.entrees; etat.entrees = []; sauver(); toutRedessiner();
+  this.dataset.arme = ""; this.textContent = "Effacer toutes les saisies";
+  toast("Toutes les saisies ont été effacées.", () => { etat.entrees = avant; sauver(); toutRedessiner(); });
+};
+
+$("#btn-seed").onclick = () => {
+  let n = 0; SEED.forEach(e => { if(!doublon(e)){ etat.entrees.push({id:uid(), ...e}); n++; } });
+  sauver(); toutRedessiner(); toast(n ? `${n} interventions rechargées.` : "Elles sont déjà toutes dans le journal.");
+};
+/* Sauvegarde JSON */
+function telecharger(nom, contenu, type){
+  const url = URL.createObjectURL(new Blob([contenu], {type})); const a = document.createElement("a");
+  a.href = url; a.download = nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$("#btn-sauve").onclick = () => telecharger(`Sauvegarde_suivi_numerique_${auj()}.json`, JSON.stringify(etat, null, 1), "application/json");
+$("#imp-json").addEventListener("change", async ev => {
+  const fi = ev.target.files[0]; ev.target.value = ""; if(!fi) return;
+  try{
+    const o = JSON.parse(await fi.text());
+    if(!Array.isArray(o.entrees)) throw new Error();
+    const ids = new Set(etat.entrees.map(e => e.id)); let n = 0;
+    o.entrees.forEach(e => { if(!ids.has(e.id) && !doublon(e)){ etat.entrees.push(e); n++; } });
+    Object.entries(o.taches||{}).forEach(([m,l]) => { etat.taches[m] = [...new Set([...(etat.taches[m]||[]), ...l])]; });
+    etat.params = {...etat.params, ...(o.params||{})};
+    sauver(); remplirParams(); toutRedessiner(); toast(`Sauvegarde restaurée : ${n} saisies ajoutées.`);
+  }catch(e){ toast("Ce fichier n'est pas une sauvegarde de cette page."); }
+});
+function doublon(e){ return etat.entrees.some(x => x.date === e.date && x.mission === e.mission && x.tache === e.tache && (x.precision||"") === (e.precision||"") && (x.minutes||0) === (e.minutes||0)); }
+
+/* ---------------- Import Excel ---------------- */
+function normal(s){ return String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim(); }
+function versMinutes(v){
+  if(v === null || v === undefined || v === "") return null;
+  if(typeof v === "number") return v < 1 ? Math.round(v*1440) : Math.round(v); // fraction de jour Excel, sinon minutes
+  const s = normal(v).replace(/\s/g,"");
+  let m = s.match(/^(\d+)h(\d{0,2})/); if(m) return (+m[1])*60 + (+m[2]||0);
+  m = s.match(/^(\d+):(\d{2})/); if(m) return (+m[1])*60 + (+m[2]);
+  m = s.match(/^(\d+)(min|mn)?$/); if(m) return +m[1];
+  return null;
+}
+function versDate(v){
+  if(v instanceof Date) return iso(v);
+  if(typeof v === "number"){ const d = XLSX.SSF.parse_date_code(v); return `${d.y}-${String(d.m).padStart(2,"0")}-${String(d.d).padStart(2,"0")}`; }
+  const s = String(v||"").trim(); let m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
+  m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return m[0];
+  return null;
+}
+function missionDe(v){
+  const n = normal(v); if(!n) return null;
+  const exact = MISSIONS.find(m => normal(m.id) === n || normal(m.court) === n); if(exact) return exact.id;
+  const regles = [["pilotis","Projet PILOTIS"],["perman","Permanences numériques"],["pix","Pix"],["gar","GAR & ressources numériques"],["ent","ENT (NEO) & comptes"],["ecran","Écrans dynamiques"],["site","Site internet & communication"],["materiel","Matériel & maintenance"],["depann","Assistance & dépannage"],["assist","Assistance & dépannage"],["reseau","Réseau pédagogique & licences"]];
+  const r = regles.find(([k]) => n.includes(k)); return r ? r[1] : null;
+}
+$("#imp-xlsx").addEventListener("change", async ev => {
+  const fi = ev.target.files[0]; ev.target.value = ""; if(!fi) return;
+  if(typeof XLSX === "undefined"){ toast("La bibliothèque Excel n'a pas pu se charger : vérifiez la connexion Internet."); return; }
+  try{
+    const wb = XLSX.read(await fi.arrayBuffer(), {type:"array"});
+    const nomFeuille = wb.SheetNames.find(n => normal(n) === "journal") || wb.SheetNames[0];
+    const lignes = XLSX.utils.sheet_to_json(wb.Sheets[nomFeuille], {header:1, raw:true, defval:""});
+    const iH = lignes.findIndex(l => l.some(c => normal(c) === "date") && l.some(c => normal(c).startsWith("mission")));
+    if(iH < 0) throw new Error("entete");
+    const H = lignes[iH].map(normal);
+    const col = (...cles) => H.findIndex(h => cles.some(k => h.startsWith(k)));
+    const C = {date:col("date"), mission:col("mission"), tache:col("tache"), precision:col("precision","pour qui"), dem:col("demand"),
+               min:col("duree (min"), duree:col("duree"), statut:col("statut"), hors:col("hors","sur temps","temps perso"), rem:col("remarque")};
+    let n = 0, ignores = 0;
+    lignes.slice(iH+1).forEach(l => {
+      const date = versDate(l[C.date]), mission = missionDe(l[C.mission]), tache = String(l[C.tache] ?? "").trim();
+      if(!date || !tache){ if(l.some(c => c !== "")) ignores++; return; }
+      const minutes = C.min >= 0 && l[C.min] !== "" ? versMinutes(+l[C.min]) : versMinutes(l[C.duree]);
+      const dem = String(C.dem >= 0 ? l[C.dem] : "").trim();
+      const e = {id:uid(), date, mission: mission || "Assistance & dépannage", tache,
+        precision: C.precision >= 0 ? String(l[C.precision]||"").trim() : "",
+        demandeur: DEMANDEURS.includes(dem) ? dem : "", minutes,
+        statut: STATUTS.includes(String(l[C.statut]).trim()) ? String(l[C.statut]).trim() : "Terminé",
+        hors: normal(l[C.hors]) === "oui", remarque: C.rem >= 0 ? String(l[C.rem]||"").trim() : ""};
+      if(dem && !e.demandeur) e.remarque = [e.remarque, `Demandeur : ${dem}`].filter(Boolean).join(" – ");
+      if(!doublon(e)){ etat.entrees.push(e); n++; }
+    });
+    sauver(); toutRedessiner();
+    toast(`${n} interventions importées${ignores ? `, ${ignores} lignes ignorées (date ou tâche manquante)` : ""}.`);
+  }catch(e){ toast("Impossible de lire ce fichier : il faut un onglet avec des colonnes « Date » et « Mission »."); }
+});
+
+/* ---------------- Export Excel ---------------- */
+function exporterExcel(){
+  if(typeof XLSX === "undefined"){ toast("La bibliothèque Excel n'a pas pu se charger : vérifiez la connexion Internet."); return; }
+  const c = calculs(), H = '[h]"h"mm';
+  const t = m => ({t:"n", v:(m||0)/1440, z:H});
+  const wb = XLSX.utils.book_new();
+
+  // Synthèse
+  const S = [
+    ["Référent numérique : bilan du temps consacré aux missions"],
+    ["Fathey ZEGHOUDI, Collège Marcel Pagnol, Bonnières-sur-Seine"],
+    [`Du ${dateFr(etat.params.debut)} au ${dateFr(c.dernier)}`],
+    [],
+    ["Indicateurs", "Valeur"],
+    ["Temps compté (journal + 36 semaines de permanences)", t(c.total)],
+    ["Permanences de l'année comptées d'office (lundi et mardi, 36 semaines)", c.permN],
+    ["Temps des permanences de l'année", t(c.permMin)],
+    ["Interventions notées au journal", c.n],
+    ["dont temps fait sur mon temps personnel (hors cours)", t(c.hors)],
+    ["Semaines de cours écoulées (vacances déduites)", c.semaines],
+    ["Rythme courant par semaine (hors permanences et hors PILOTIS)", t(c.rythme)],
+    ["Projection sur l'année (rythme courant × 36 semaines + PILOTIS + permanences)", t(c.projection)],
+    ["Montant annuel de l'IMP (€)", c.imp || "non renseigné"],
+    ["Taux horaire réel de l'IMP (€/h)", c.tauxH ? {t:"n", v:+c.tauxH.toFixed(2), z:"0.00"} : "—"],
+    ["Saisies sans durée (non comptées)", c.sansDuree],
+    [],
+    ["Mission", "Interventions", "Temps", "Part du temps", "Sur temps personnel"],
+    ...c.parMission.map(x => [x.m.id, x.n, t(x.min), {t:"n", v:c.total ? x.min/c.total : 0, z:"0%"}, t(x.hors)]),
+    ["TOTAL", c.nTable, t(c.total), {t:"n", v:c.total ? 1 : 0, z:"0%"}, t(c.hors)],
+    [],
+    ["Demandeur", "Interventions", "Temps", "Part des interventions"],
+    ...c.parDem.filter(x => x.n).map(x => [x.d, x.n, t(x.min), {t:"n", v:c.n ? x.n/c.n : 0, z:"0%"}]),
+    [],
+    ["Mois", "Interventions", "Temps"],
+    ...c.parMois.map(x => [nomMois(x.k), x.n, t(x.min)]),
+    [],
+    ["Circulaire n° 2015-058 du 29 avril 2015, point II-6 : IMP du référent numérique au « taux annuel de 1 250 € à 3 750 € en fonction de la charge effective de travail et du niveau d'expertise requis »."],
+  ];
+  const wsS = XLSX.utils.aoa_to_sheet(S);
+  wsS["!cols"] = [{wch:58},{wch:14},{wch:12},{wch:20},{wch:22}];
+  XLSX.utils.book_append_sheet(wb, wsS, "Synthèse");
+
+  // Journal
+  const J = [["Date","Mission","Tâche","Pour qui / quoi","Demandeur","Durée","Durée (min)","Statut","Sur temps personnel","Remarque"]];
+  [...etat.entrees].sort((a,b) => a.date.localeCompare(b.date)).forEach(e => {
+    const [y,m,d] = e.date.split("-").map(Number);
+    J.push([{t:"d", v:new Date(Date.UTC(y,m-1,d)), z:"dd/mm/yyyy"}, e.mission, e.tache, e.precision||"", e.demandeur||"",
+      e.minutes ? t(e.minutes) : "", e.minutes || "", e.statut||"", e.hors ? "Oui" : "Non", e.remarque||""]);
+  });
+  const wsJ = XLSX.utils.aoa_to_sheet(J, {cellDates:true});
+  wsJ["!cols"] = [{wch:11},{wch:28},{wch:55},{wch:24},{wch:20},{wch:8},{wch:11},{wch:10},{wch:12},{wch:40}];
+  wsJ["!autofilter"] = {ref:`A1:J${J.length}`};
+  XLSX.utils.book_append_sheet(wb, wsJ, "Journal");
+
+  XLSX.writeFile(wb, `Suivi_numerique_${auj()}.xlsx`, {cellDates:true});
+  toast("Fichier Excel téléchargé.");
+}
+
+/* ---------------- Onglets ---------------- */
+function ouvrir(id){
+  document.querySelectorAll("nav.onglets button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.onglet === id)));
+  document.querySelectorAll("main > section").forEach(s => s.hidden = s.id !== id);
+  try{ sessionStorage.setItem("rupn-onglet", id); }catch(e){}
+  window.scrollTo({top:0});
+}
+document.querySelectorAll("nav.onglets button").forEach(b => b.onclick = () => ouvrir(b.dataset.onglet));
+
+function toutRedessiner(){
+  dessinerEntete(); dessinerDernieres(); remplirFiltres(); dessinerJournal(); dessinerSynthese(); dessinerTachesPerso(); remplirPrecisions(); majStockage();
+  if(f.mission && !f.edition){ const v = $("#f-tache").value; remplirTaches(); if([...$("#f-tache").options].some(o => o.value === v)) $("#f-tache").value = v; $("#nouvelle-tache").hidden = $("#f-tache").value !== "__autre"; }
+}
+
+charger(); if(premiereFois || majSeed) sauver(); remplirParams(); reinitForm(); toutRedessiner();
+if(premiereFois) setTimeout(() => toast(`${etat.entrees.length} interventions déjà chargées depuis votre tableau.`), 300);
+else if(majSeed) setTimeout(() => toast(`${majSeed} interventions ajoutées à votre journal.`), 300);
+try{ const o = sessionStorage.getItem("rupn-onglet"); if(o) ouvrir(o); }catch(e){}
+</script>
+</body>
+</html>
