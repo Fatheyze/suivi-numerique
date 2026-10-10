@@ -69,7 +69,7 @@ section[hidden]{display:none}
 .mission i{width:12px;height:12px;border-radius:3px;flex:none}
 .mission[aria-pressed="true"]{border-color:var(--encre);box-shadow:inset 0 0 0 1.5px var(--encre);background:color-mix(in srgb,var(--encre) 8%,var(--carte))}
 
-input[type=text],input[type=date],input[type=number],select,textarea{width:100%;border:1.5px solid var(--ligne);background:var(--papier);border-radius:8px;padding:9px 11px;min-height:44px}
+input[type=text],input[type=password],input[type=date],input[type=number],select,textarea{width:100%;border:1.5px solid var(--ligne);background:var(--papier);border-radius:8px;padding:9px 11px;min-height:44px}
 textarea{min-height:60px;resize:vertical}
 .ligne2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .duree-perso{display:flex;gap:8px;align-items:center;margin-top:8px}
@@ -146,6 +146,7 @@ tr.total td{font-weight:700;border-top:2px solid var(--texte)}
 <header class="cahier">
   <h1>Suivi du référent numérique</h1>
   <p>Fathey ZEGHOUDI, Collège Marcel Pagnol, Bonnières-sur-Seine. Réseau, ENT, GAR, Pix, site et écrans.</p>
+  <p id="h-sync"></p>
   <div class="semaine" aria-live="polite">
     <strong id="h-semaine">0h00</strong><span id="h-semaine-lib">noté cette semaine</span>
     <strong id="h-total">0h00</strong><span>au total, avec les 36 semaines de permanences</span>
@@ -290,6 +291,27 @@ tr.total td{font-weight:700;border-top:2px solid var(--texte)}
 <!-- ============ RÉGLAGES ============ -->
 <section id="reglages" role="tabpanel" hidden>
   <div class="bloc">
+    <h2>Synchroniser mes appareils (GitHub)</h2>
+    <p class="aide" style="margin-top:0">Vos saisies sont enregistrées dans le fichier « suivi-numerique.json » de votre dépôt privé « donnees-outils », comme vos autres outils : tous vos appareils se mettent à jour tout seuls. Si vous avez déjà connecté un autre de vos outils sur ce navigateur, la clé est reprise automatiquement. Elle n'est jamais écrite dans la page publique.</p>
+    <div class="ligne2" style="margin-top:10px">
+      <div class="etape" style="grid-column:1/-1"><label for="s-token">Clé GitHub (la même que pour vos autres outils : RCD, QR codes…)</label><input type="password" id="s-token" autocomplete="off" placeholder="github_pat_…"></div>
+    </div>
+    <details style="margin-bottom:12px"><summary class="aide" style="cursor:pointer">Paramètres avancés</summary>
+      <div class="ligne2" style="margin-top:10px">
+        <div class="etape"><label for="s-owner">Compte GitHub</label><input type="text" id="s-owner" autocomplete="off"></div>
+        <div class="etape"><label for="s-repo">Dépôt privé de données</label><input type="text" id="s-repo" autocomplete="off"></div>
+        <div class="etape"><label for="s-path">Fichier de données dans ce dépôt</label><input type="text" id="s-path" autocomplete="off"></div>
+      </div>
+    </details>
+    <div class="actions">
+      <button class="btn" type="button" id="btn-sync-ok">Enregistrer et synchroniser</button>
+      <button class="btn sec" type="button" id="btn-sync-now">Synchroniser maintenant</button>
+      <button class="btn danger" type="button" id="btn-sync-off">Effacer la clé de ce navigateur</button>
+    </div>
+    <p class="aide" id="sync-etat" role="status"></p>
+  </div>
+
+  <div class="bloc">
     <h2>Fichiers</h2>
     <div class="actions">
       <button class="btn" type="button" data-action="export">Télécharger en Excel</button>
@@ -304,7 +326,7 @@ tr.total td{font-weight:700;border-top:2px solid var(--texte)}
       <label class="btn sec" style="display:inline-flex;align-items:center">Restaurer une sauvegarde
         <input type="file" id="imp-json" accept=".json" hidden></label>
     </div>
-    <p class="aide">Vos saisies restent dans ce navigateur, sur cet appareil : elles ne sont jamais envoyées sur GitHub. Pour passer du PC du collège à celui de la maison, faites une sauvegarde sur l'un et restaurez-la sur l'autre.</p>
+    <p class="aide">Sans synchronisation, vos saisies restent dans ce navigateur. La sauvegarde reste utile comme copie de sécurité.</p>
     <p class="aide" id="stockage-etat"></p>
   </div>
 
@@ -365,97 +387,97 @@ const TACHES_DEFAUT = {
   "Projet PILOTIS":["Audit de l'établissement (salle par salle)","Mail à l'équipe / consultation des collègues","Recueil des besoins (fichier Excel)","Mail de questions au Département","Réunion (Teams)","Réponse aux questions du Département","Vérification suite à une réunion","Lecture / revue du catalogue logiciel","Audit et recueil des besoins"],
   "Permanences numériques":["Permanence supplémentaire"],
 };
-const SEED = [{"date":"2026-09-02","mission":"GAR & ressources numériques","tache":"Analyse des devis et proposition de renouvellement Genially (formule CAMPUS)","precision":"","demandeur":"Initiative du référent","minutes":90,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-07","mission":"Réseau pédagogique & licences","tache":"Comptes 6e et maintenance SambaEdu (fiches et création des accès, purge AD, scripts)","precision":"","demandeur":"Initiative du référent","minutes":300,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-07","mission":"Écrans dynamiques","tache":"Rencontres parents : création de l'affiche, écran d'information et diffusion sur les écrans dynamiques","precision":"","demandeur":"","minutes":60,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-07","mission":"ENT (NEO) & comptes","tache":"Codes ENT ULIS et modification de comptes utilisateurs","precision":"","demandeur":"","minutes":30,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-07","mission":"Assistance & dépannage","tache":"Problème de connexion Internet – salle de M. COUPRIE","precision":"","demandeur":"Collègue","minutes":30,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-07","mission":"Assistance & dépannage","tache":"Aide à la connexion Wi-Fi sur ordinateur personnel (Mme NOMBELA)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-07","mission":"ENT (NEO) & comptes","tache":"Transmission des identifiants et accompagnement d'un nouvel enseignant (Mme BOUKHATEB)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-07","mission":"GAR & ressources numériques","tache":"Mise en place des applications professeurs et élèves dans le GAR","precision":"","demandeur":"Initiative du référent","minutes":120,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-07","mission":"Écrans dynamiques","tache":"Ticket SYN : relance des écrans d'affichage dynamique (certains bloquent ou ne s'allument plus, écran de la cantine en panne)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260907_00040"},
-{"date":"2026-09-07","mission":"Réseau pédagogique & licences","tache":"Ticket SYN : PC professeur sans accès Internet en salle 006 (prise RJ45 I38)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260907_00042"},
-{"date":"2026-09-07","mission":"Matériel & maintenance","tache":"Ticket SYN : vidéoprojecteur qui s'éteint au bout de 3 s, salle 07 (ABDELLAH)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260907_00101"},
-{"date":"2026-09-07","mission":"Projet PILOTIS","tache":"PILOTIS : mail à l'équipe pour présenter le projet et lancer la consultation sur les besoins logiciels et matériels","precision":"","demandeur":"Initiative du référent","minutes":45,"statut":"Terminé","hors":true,"remarque":"Estimation – consultation menée du 7 au 17/09"},
-{"date":"2026-09-08","mission":"Assistance & dépannage","tache":"Traitement d'un ticket et vérification d'un problème réseau/Internet (Mme NOMBELA)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-08","mission":"ENT (NEO) & comptes","tache":"Génération et transmission des codes ENT élèves (3D) et responsables (Mme NIDELET)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-08","mission":"Réseau pédagogique & licences","tache":"Ticket SYN : réinitialisation des codes réseau 5e, 4e et 3e (avec fichier)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260908_00066"},
-{"date":"2026-09-08","mission":"Matériel & maintenance","tache":"Ticket SYN : changement d'ampoule du vidéoprojecteur, salle 214 (YVANOFF)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260908_00072"},
-{"date":"2026-09-10","mission":"Réseau pédagogique & licences","tache":"Installation des raccourcis Évaluations nationales sur tous les postes des 2 salles informatiques","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-11","mission":"Réseau pédagogique & licences","tache":"Réinitialisation des codes d'accès réseau des élèves de 4e","precision":"","demandeur":"Élève / famille","minutes":30,"statut":"Terminé","hors":true,"remarque":"Jour off (vendredi)"},
-{"date":"2026-09-14","mission":"ENT (NEO) & comptes","tache":"Compte ENT IOSIF : demande de rattachement à l'établissement","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-14","mission":"Écrans dynamiques","tache":"Remplacement d'écran : ouverture de ticket (1/2)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-14","mission":"Écrans dynamiques","tache":"Remplacement d'écran : ouverture de ticket (2/2)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-14","mission":"Écrans dynamiques","tache":"Demande de réparation des écrans dynamiques (suivi SAV)","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"En cours","hors":true,"remarque":"Durée à compléter"},
-{"date":"2026-09-14","mission":"ENT (NEO) & comptes","tache":"Assistance et renvoi des identifiants ENT (Mme ERGUN)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-14","mission":"GAR & ressources numériques","tache":"Vérification et résolution des accès Médiacentre (Pix, Pearltrees) pour des élèves de 3E (M. BRODU)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-14","mission":"Assistance & dépannage","tache":"Accompagnement sur l'accès Premium Wooflash via l'Académie de Versailles (M. COUPRIE)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Demande de service SYN : remplacement du vidéoprojecteur de la salle 106 suite au passage de M. KHAMLA","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista S260914_00044 – refusé par SYN"},
-{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Ticket SYN : demande d'enceintes pour la salle 209 (Mme BERNARD)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00036"},
-{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Ticket SYN : écran défaillant en salle 207 (M. BENSAID)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00037 – doublon possible avec « Remplacement d'écran : ouverture de ticket » du 14/09"},
-{"date":"2026-09-14","mission":"Réseau pédagogique & licences","tache":"Ticket SYN : réinitialisation des codes réseau des classes de 4e","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00038"},
-{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Ticket SYN : vidéoprojecteur et postes élèves en panne, salle 008 (Mme LE MEUR, M. MICHAUD)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00039"},
-{"date":"2026-09-15","mission":"Site internet & communication","tache":"Mise à jour du site internet du collège","precision":"","demandeur":"","minutes":25,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-15","mission":"Matériel & maintenance","tache":"Ticket SYN : son, PC et vidéoprojecteur à renouveler (Mme MOUILLET)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260915_00068"},
-{"date":"2026-09-15","mission":"Matériel & maintenance","tache":"Ticket SYN : relance du remplacement du vidéoprojecteur de la salle 106 (demande de l'an dernier)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260915_00069"},
-{"date":"2026-09-15","mission":"Matériel & maintenance","tache":"Ticket SYN : remise en route du vidéoprojecteur, salle 005","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260915_00072"},
-{"date":"2026-09-17","mission":"ENT (NEO) & comptes","tache":"Gestion ENT et liaison PRONOTE (demande de la direction)","precision":"","demandeur":"Direction","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-17","mission":"Réseau pédagogique & licences","tache":"Codes réseau des élèves de 4e (évaluations nationales)","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-17","mission":"Pix","tache":"Récupération des attestations Pix déjà fournies en fin d'année","precision":"","demandeur":"Secrétariat / gestion","minutes":20,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-17","mission":"Projet PILOTIS","tache":"PILOTIS : relances et collecte des 20 retours des collègues, retranscription salle par salle","precision":"","demandeur":"Initiative du référent","minutes":90,"statut":"Terminé","hors":true,"remarque":"Estimation"},
-{"date":"2026-09-21","mission":"Écrans dynamiques","tache":"Demande d'affichage sur les écrans dynamiques (M. HUE)","precision":"","demandeur":"Vie scolaire (CPE)","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-21","mission":"Assistance & dépannage","tache":"Demande de code de l'administration sur boîte académique (cas complexe)","precision":"","demandeur":"Secrétariat / gestion","minutes":25,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-21","mission":"Réseau pédagogique & licences","tache":"Appel à Pulp Info pour les codes Office (licences)","precision":"","demandeur":"Initiative du référent","minutes":20,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-22","mission":"Site internet & communication","tache":"Création d'affiches pour le site et l'ENT (demande de la gestionnaire)","precision":"","demandeur":"Secrétariat / gestion","minutes":90,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-22","mission":"Écrans dynamiques","tache":"Affichage sur les écrans dynamiques (demande de la gestionnaire)","precision":"","demandeur":"Secrétariat / gestion","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-22","mission":"Réseau pédagogique & licences","tache":"Code réseau pour un professeur remplaçant (M. NAJI)","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-22","mission":"ENT (NEO) & comptes","tache":"Code ENT pour un remplaçant (M. LEFEVRE), 2e essai + message","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-22","mission":"Réseau pédagogique & licences","tache":"Codes réseau élève","precision":"","demandeur":"Élève / famille","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter"},
-{"date":"2026-09-22","mission":"Projet PILOTIS","tache":"PILOTIS : lecture du diaporama fourni et mail de 40 questions au Département","precision":"","demandeur":"Initiative du référent","minutes":165,"statut":"Terminé","hors":true,"remarque":"Estimation (lecture 45 min + rédaction 2h) – date à vérifier"},
-{"date":"2026-09-23","mission":"Pix","tache":"Réponse au mail de Mme NIDELET","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-23","mission":"ENT (NEO) & comptes","tache":"Réponse à la nouvelle professeure d'anglais après réinitialisation de son compte ENT","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-24","mission":"Pix","tache":"Invitation des nouveaux professeurs dans Pix Orga","precision":"","demandeur":"Initiative du référent","minutes":5,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-24","mission":"ENT (NEO) & comptes","tache":"Requête à la cellule ENT pour le code de M. BETRON","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-24","mission":"ENT (NEO) & comptes","tache":"Code ENT pour le remplaçant M. NAJI","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-24","mission":"Projet PILOTIS","tache":"Réunion Teams PILOTIS","precision":"","demandeur":"SYN / Département","minutes":135,"statut":"Terminé","hors":true,"remarque":"Sur jour de repos"},
-{"date":"2026-09-24","mission":"Réseau pédagogique & licences","tache":"Contact Pulp Info au sujet des licences du collège","precision":"","demandeur":"Initiative du référent","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-27","mission":"Projet PILOTIS","tache":"Suite de la réunion Teams : vérification des différentes demandes formulées","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":"Dimanche"},
-{"date":"2026-09-27","mission":"ENT (NEO) & comptes","tache":"Problème d'accès ENT de Mme MONTEIRO via la boîte mail académique","precision":"","demandeur":"Collègue","minutes":20,"statut":"Terminé","hors":true,"remarque":"Dimanche"},
-{"date":"2026-09-27","mission":"ENT (NEO) & comptes","tache":"Mail à la direction et au secrétariat : compte de Mme MONTEIRO et autorisation parentale","precision":"","demandeur":"Direction","minutes":20,"statut":"Terminé","hors":true,"remarque":"Dimanche"},
-{"date":"2026-09-28","mission":"ENT (NEO) & comptes","tache":"Réponse code ENT à Cristina","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-28","mission":"ENT (NEO) & comptes","tache":"Actualité ENT : convention tablettes (demande de Mme RAGE)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-28","mission":"Réseau pédagogique & licences","tache":"Information Wi-Fi (« PDE »)","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":"Libellé d'origine peu lisible : à préciser"},
-{"date":"2026-09-29","mission":"Pix","tache":"Import Pix : demande du fichier SIECLE et téléversement","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-09-29","mission":"Matériel & maintenance","tache":"Passage de M. KHAMLA (SYN) au collège et point sur les actions réalisées","precision":"","demandeur":"SYN / Département","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite (non datée dans l'original) – durée à compléter"},
-{"date":"2026-09-29","mission":"Matériel & maintenance","tache":"Échange de SMS pour régler le problème d'écran de M. COUPRIE","precision":"","demandeur":"Collègue","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite – nom à vérifier (« Couri ») – durée à compléter"},
-{"date":"2026-09-29","mission":"ENT (NEO) & comptes","tache":"Réponse au mail du secrétariat concernant deux comptes","precision":"","demandeur":"Secrétariat / gestion","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite – durée à compléter"},
-{"date":"2026-09-29","mission":"Pix","tache":"Message de rappel Pix sur PRONOTE : point sur le parcours de rentrée","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite – durée à compléter"},
-{"date":"2026-09-30","mission":"Réseau pédagogique & licences","tache":"Vérification des fiches réseau (salle de permanence, salle ULIS, CDI)","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter"},
-{"date":"2026-09-30","mission":"Site internet & communication","tache":"Affichage de la permanence numérique du collège","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter"},
-{"date":"2026-09-30","mission":"ENT (NEO) & comptes","tache":"Code élève et ticket pour un élève de 6E","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":"Date déduite"},
-{"date":"2026-09-30","mission":"Projet PILOTIS","tache":"Réponse par mail aux questions de M. MARTINS (SYN)","precision":"","demandeur":"SYN / Département","minutes":20,"statut":"Terminé","hors":true,"remarque":"Date déduite"},
-{"date":"2026-10-01","mission":"Pix","tache":"Réponse aux questions de Mme NOMBELA","precision":"","demandeur":"Collègue","minutes":30,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-10-01","mission":"Écrans dynamiques","tache":"Retrait d'une affiche à la demande de M. HUE","precision":"","demandeur":"Vie scolaire (CPE)","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter"},
-{"date":"2026-10-01","mission":"GAR & ressources numériques","tache":"Affectation GAR Pearltrees et autres ressources : problème de licences, traitement un par un","precision":"","demandeur":"Initiative du référent","minutes":20,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-10-01","mission":"Projet PILOTIS","tache":"PILOTIS : audit de l'établissement salle par salle (44 espaces : postes, matériel raccordé, prises réseau, logiciels utilisés)","precision":"","demandeur":"SYN / Département","minutes":360,"statut":"Terminé","hors":true,"remarque":"Estimation (environ 8 min par salle) – audit de septembre à début octobre, dernier relevé le 01/10"},
-{"date":"2026-10-04","mission":"Pix","tache":"Point Pix : message PRONOTE et synthèse","precision":"","demandeur":"Initiative du référent","minutes":45,"statut":"Terminé","hors":true,"remarque":"Dimanche"},
-{"date":"2026-10-05","mission":"Projet PILOTIS","tache":"Lecture et revue du catalogue logiciel PILOTIS","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-10-05","mission":"Matériel & maintenance","tache":"Ticket SYN : vidéoprojecteur salle 215, ampoule usée et surchauffe (M. GRENIER) – nettoyage du filtre, remplacement de l'ampoule","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I261005_00056 – intervention planifiée par SYN"},
-{"date":"2026-10-06","mission":"Écrans dynamiques","tache":"Réduction du temps d'affichage sur les écrans dynamiques","precision":"","demandeur":"","minutes":20,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-10-06","mission":"Écrans dynamiques","tache":"Message de POULINGUE : image à refaire","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-10-06","mission":"ENT (NEO) & comptes","tache":"Résolution du problème PRONOTE de M. HERRAN (2 jours de suite)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-10-07","mission":"ENT (NEO) & comptes","tache":"Nouvel élève entrant (6B) : code ENT + mail","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":"Classe à vérifier (« 65 B » dans l'original)"},
-{"date":"2026-10-07","mission":"Réseau pédagogique & licences","tache":"Nouvel élève entrant (6B) : code réseau + mail","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":"Classe à vérifier (« 65 B » dans l'original)"},
-{"date":"2026-10-07","mission":"ENT (NEO) & comptes","tache":"Récréation du mercredi : demande de codes Pix / ENT présentée par la direction","precision":"","demandeur":"Direction","minutes":20,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-10-07","mission":"Projet PILOTIS","tache":"PILOTIS : réalisation du fichier de recueil des besoins (besoins argumentés, retours par salle, croisement avec le catalogue SYN de 86 applications, dotation cible par salle ; versions interne et SYN)","precision":"","demandeur":"SYN / Département","minutes":480,"statut":"Terminé","hors":true,"remarque":"Estimation – fichier commencé le 18/09, finalisé le 07/10 vers minuit"},
-{"date":"2026-10-08","mission":"GAR & ressources numériques","tache":"Mise en place de Genially pour les professeurs (GENIUS)","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-10-08","mission":"Réseau pédagogique & licences","tache":"Ouverture du port AMON pour BCDI","precision":"","demandeur":"CDI","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-10-08","mission":"Écrans dynamiques","tache":"Mise en ligne d'une affiche du CDI","precision":"","demandeur":"CDI","minutes":10,"statut":"Terminé","hors":true,"remarque":""},
-{"date":"2026-10-08","mission":"Projet PILOTIS","tache":"PILOTIS : envoi du fichier de recueil des besoins par mail","precision":"","demandeur":"SYN / Département","minutes":20,"statut":"Terminé","hors":true,"remarque":"Estimation"},
-{"date":"2026-10-09","mission":"ENT (NEO) & comptes","tache":"Messagerie parents ENT : contrôle parental","precision":"","demandeur":"Élève / famille","minutes":5,"statut":"Terminé","hors":true,"remarque":"Vendredi"},
-{"date":"2026-10-09","mission":"GAR & ressources numériques","tache":"Message mail pour Genially","precision":"","demandeur":"Initiative du référent","minutes":15,"statut":"Terminé","hors":true,"remarque":"Vendredi"},
-{"date":"2026-10-09","mission":"GAR & ressources numériques","tache":"Gestion des comptes Genially","precision":"","demandeur":"Initiative du référent","minutes":20,"statut":"Terminé","hors":true,"remarque":"Date déduite – vendredi"},
-{"date":"2026-10-09","mission":"Pix","tache":"Message de rappel Pix sur PRONOTE : point sur le parcours de rentrée","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Vendredi – doublon possible avec le 29/09 – durée à compléter"}];
+const SEED = [{"date":"2026-09-02","mission":"GAR & ressources numériques","tache":"Analyse des devis et proposition de renouvellement Genially (formule CAMPUS)","precision":"","demandeur":"Initiative du référent","minutes":90,"statut":"Terminé","hors":true,"remarque":"","id":"seed-ebccde0d0e18"},
+{"date":"2026-09-07","mission":"Réseau pédagogique & licences","tache":"Comptes 6e et maintenance SambaEdu (fiches et création des accès, purge AD, scripts)","precision":"","demandeur":"Initiative du référent","minutes":300,"statut":"Terminé","hors":true,"remarque":"","id":"seed-b7066433445d"},
+{"date":"2026-09-07","mission":"Écrans dynamiques","tache":"Rencontres parents : création de l'affiche, écran d'information et diffusion sur les écrans dynamiques","precision":"","demandeur":"","minutes":60,"statut":"Terminé","hors":true,"remarque":"","id":"seed-2eb0ed5fe1d3"},
+{"date":"2026-09-07","mission":"ENT (NEO) & comptes","tache":"Codes ENT ULIS et modification de comptes utilisateurs","precision":"","demandeur":"","minutes":30,"statut":"Terminé","hors":true,"remarque":"","id":"seed-e2fcad772807"},
+{"date":"2026-09-07","mission":"Assistance & dépannage","tache":"Problème de connexion Internet – salle de M. COUPRIE","precision":"","demandeur":"Collègue","minutes":30,"statut":"Terminé","hors":true,"remarque":"","id":"seed-68f03694d2ac"},
+{"date":"2026-09-07","mission":"Assistance & dépannage","tache":"Aide à la connexion Wi-Fi sur ordinateur personnel (Mme NOMBELA)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":"","id":"seed-1dcbd8a080f6"},
+{"date":"2026-09-07","mission":"ENT (NEO) & comptes","tache":"Transmission des identifiants et accompagnement d'un nouvel enseignant (Mme BOUKHATEB)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":"","id":"seed-4c6c45f621e0"},
+{"date":"2026-09-07","mission":"GAR & ressources numériques","tache":"Mise en place des applications professeurs et élèves dans le GAR","precision":"","demandeur":"Initiative du référent","minutes":120,"statut":"Terminé","hors":true,"remarque":"","id":"seed-632674058271"},
+{"date":"2026-09-07","mission":"Écrans dynamiques","tache":"Ticket SYN : relance des écrans d'affichage dynamique (certains bloquent ou ne s'allument plus, écran de la cantine en panne)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260907_00040","id":"seed-eb151a6d57c3"},
+{"date":"2026-09-07","mission":"Réseau pédagogique & licences","tache":"Ticket SYN : PC professeur sans accès Internet en salle 006 (prise RJ45 I38)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260907_00042","id":"seed-f49fd432a6a2"},
+{"date":"2026-09-07","mission":"Matériel & maintenance","tache":"Ticket SYN : vidéoprojecteur qui s'éteint au bout de 3 s, salle 07 (ABDELLAH)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260907_00101","id":"seed-a96db662ee36"},
+{"date":"2026-09-07","mission":"Projet PILOTIS","tache":"PILOTIS : mail à l'équipe pour présenter le projet et lancer la consultation sur les besoins logiciels et matériels","precision":"","demandeur":"Initiative du référent","minutes":45,"statut":"Terminé","hors":true,"remarque":"Estimation – consultation menée du 7 au 17/09","id":"seed-639e018e27a5"},
+{"date":"2026-09-08","mission":"Assistance & dépannage","tache":"Traitement d'un ticket et vérification d'un problème réseau/Internet (Mme NOMBELA)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":"","id":"seed-e8d419d4b2ff"},
+{"date":"2026-09-08","mission":"ENT (NEO) & comptes","tache":"Génération et transmission des codes ENT élèves (3D) et responsables (Mme NIDELET)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":"","id":"seed-4cbf497f412a"},
+{"date":"2026-09-08","mission":"Réseau pédagogique & licences","tache":"Ticket SYN : réinitialisation des codes réseau 5e, 4e et 3e (avec fichier)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260908_00066","id":"seed-a7b4b6fb4ad1"},
+{"date":"2026-09-08","mission":"Matériel & maintenance","tache":"Ticket SYN : changement d'ampoule du vidéoprojecteur, salle 214 (YVANOFF)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260908_00072","id":"seed-9c07b0db884d"},
+{"date":"2026-09-10","mission":"Réseau pédagogique & licences","tache":"Installation des raccourcis Évaluations nationales sur tous les postes des 2 salles informatiques","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":"","id":"seed-c96a3d486f19"},
+{"date":"2026-09-11","mission":"Réseau pédagogique & licences","tache":"Réinitialisation des codes d'accès réseau des élèves de 4e","precision":"","demandeur":"Élève / famille","minutes":30,"statut":"Terminé","hors":true,"remarque":"Jour off (vendredi)","id":"seed-aec46b48ab96"},
+{"date":"2026-09-14","mission":"ENT (NEO) & comptes","tache":"Compte ENT IOSIF : demande de rattachement à l'établissement","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-fe8e23664e1a"},
+{"date":"2026-09-14","mission":"Écrans dynamiques","tache":"Remplacement d'écran : ouverture de ticket (1/2)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-2c38d672ea33"},
+{"date":"2026-09-14","mission":"Écrans dynamiques","tache":"Remplacement d'écran : ouverture de ticket (2/2)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-258993553687"},
+{"date":"2026-09-14","mission":"Écrans dynamiques","tache":"Demande de réparation des écrans dynamiques (suivi SAV)","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"En cours","hors":true,"remarque":"Durée à compléter","id":"seed-f498311a91c8"},
+{"date":"2026-09-14","mission":"ENT (NEO) & comptes","tache":"Assistance et renvoi des identifiants ENT (Mme ERGUN)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-77488d2c5ed1"},
+{"date":"2026-09-14","mission":"GAR & ressources numériques","tache":"Vérification et résolution des accès Médiacentre (Pix, Pearltrees) pour des élèves de 3E (M. BRODU)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-b829cc05f539"},
+{"date":"2026-09-14","mission":"Assistance & dépannage","tache":"Accompagnement sur l'accès Premium Wooflash via l'Académie de Versailles (M. COUPRIE)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":"","id":"seed-41bd3b8ed588"},
+{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Demande de service SYN : remplacement du vidéoprojecteur de la salle 106 suite au passage de M. KHAMLA","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista S260914_00044 – refusé par SYN","id":"seed-fc35c82fc3e5"},
+{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Ticket SYN : demande d'enceintes pour la salle 209 (Mme BERNARD)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00036","id":"seed-c250c9c21705"},
+{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Ticket SYN : écran défaillant en salle 207 (M. BENSAID)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00037 – doublon possible avec « Remplacement d'écran : ouverture de ticket » du 14/09","id":"seed-e5e7c0c17bdf"},
+{"date":"2026-09-14","mission":"Réseau pédagogique & licences","tache":"Ticket SYN : réinitialisation des codes réseau des classes de 4e","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00038","id":"seed-a5d1d73952fd"},
+{"date":"2026-09-14","mission":"Matériel & maintenance","tache":"Ticket SYN : vidéoprojecteur et postes élèves en panne, salle 008 (Mme LE MEUR, M. MICHAUD)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260914_00039","id":"seed-2e336c97d8ba"},
+{"date":"2026-09-15","mission":"Site internet & communication","tache":"Mise à jour du site internet du collège","precision":"","demandeur":"","minutes":25,"statut":"Terminé","hors":true,"remarque":"","id":"seed-89fa779ac6f9"},
+{"date":"2026-09-15","mission":"Matériel & maintenance","tache":"Ticket SYN : son, PC et vidéoprojecteur à renouveler (Mme MOUILLET)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260915_00068","id":"seed-92e278988da0"},
+{"date":"2026-09-15","mission":"Matériel & maintenance","tache":"Ticket SYN : relance du remplacement du vidéoprojecteur de la salle 106 (demande de l'an dernier)","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260915_00069","id":"seed-8f8246114219"},
+{"date":"2026-09-15","mission":"Matériel & maintenance","tache":"Ticket SYN : remise en route du vidéoprojecteur, salle 005","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I260915_00072","id":"seed-a4843af2f934"},
+{"date":"2026-09-17","mission":"ENT (NEO) & comptes","tache":"Gestion ENT et liaison PRONOTE (demande de la direction)","precision":"","demandeur":"Direction","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-e13573aa3146"},
+{"date":"2026-09-17","mission":"Réseau pédagogique & licences","tache":"Codes réseau des élèves de 4e (évaluations nationales)","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-ae72e4c5a6b5"},
+{"date":"2026-09-17","mission":"Pix","tache":"Récupération des attestations Pix déjà fournies en fin d'année","precision":"","demandeur":"Secrétariat / gestion","minutes":20,"statut":"Terminé","hors":true,"remarque":"","id":"seed-5ee5b5f079ae"},
+{"date":"2026-09-17","mission":"Projet PILOTIS","tache":"PILOTIS : relances et collecte des 20 retours des collègues, retranscription salle par salle","precision":"","demandeur":"Initiative du référent","minutes":90,"statut":"Terminé","hors":true,"remarque":"Estimation","id":"seed-b9495b857690"},
+{"date":"2026-09-21","mission":"Écrans dynamiques","tache":"Demande d'affichage sur les écrans dynamiques (M. HUE)","precision":"","demandeur":"Vie scolaire (CPE)","minutes":15,"statut":"Terminé","hors":true,"remarque":"","id":"seed-b17b981bcb1b"},
+{"date":"2026-09-21","mission":"Assistance & dépannage","tache":"Demande de code de l'administration sur boîte académique (cas complexe)","precision":"","demandeur":"Secrétariat / gestion","minutes":25,"statut":"Terminé","hors":true,"remarque":"","id":"seed-1fbd1f590e9c"},
+{"date":"2026-09-21","mission":"Réseau pédagogique & licences","tache":"Appel à Pulp Info pour les codes Office (licences)","precision":"","demandeur":"Initiative du référent","minutes":20,"statut":"Terminé","hors":true,"remarque":"","id":"seed-bd13087a7e78"},
+{"date":"2026-09-22","mission":"Site internet & communication","tache":"Création d'affiches pour le site et l'ENT (demande de la gestionnaire)","precision":"","demandeur":"Secrétariat / gestion","minutes":90,"statut":"Terminé","hors":true,"remarque":"","id":"seed-0296fd521e10"},
+{"date":"2026-09-22","mission":"Écrans dynamiques","tache":"Affichage sur les écrans dynamiques (demande de la gestionnaire)","precision":"","demandeur":"Secrétariat / gestion","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-749952267501"},
+{"date":"2026-09-22","mission":"Réseau pédagogique & licences","tache":"Code réseau pour un professeur remplaçant (M. NAJI)","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":"","id":"seed-211bdb2284d4"},
+{"date":"2026-09-22","mission":"ENT (NEO) & comptes","tache":"Code ENT pour un remplaçant (M. LEFEVRE), 2e essai + message","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":"","id":"seed-711c75336d93"},
+{"date":"2026-09-22","mission":"Réseau pédagogique & licences","tache":"Codes réseau élève","precision":"","demandeur":"Élève / famille","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter","id":"seed-bf02bed75c68"},
+{"date":"2026-09-22","mission":"Projet PILOTIS","tache":"PILOTIS : lecture du diaporama fourni et mail de 40 questions au Département","precision":"","demandeur":"Initiative du référent","minutes":165,"statut":"Terminé","hors":true,"remarque":"Estimation (lecture 45 min + rédaction 2h) – date à vérifier","id":"seed-e7d3d51d2402"},
+{"date":"2026-09-23","mission":"Pix","tache":"Réponse au mail de Mme NIDELET","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-63ea439cf35f"},
+{"date":"2026-09-23","mission":"ENT (NEO) & comptes","tache":"Réponse à la nouvelle professeure d'anglais après réinitialisation de son compte ENT","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":"","id":"seed-1a91d265808e"},
+{"date":"2026-09-24","mission":"Pix","tache":"Invitation des nouveaux professeurs dans Pix Orga","precision":"","demandeur":"Initiative du référent","minutes":5,"statut":"Terminé","hors":true,"remarque":"","id":"seed-81a88aa84fde"},
+{"date":"2026-09-24","mission":"ENT (NEO) & comptes","tache":"Requête à la cellule ENT pour le code de M. BETRON","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-54f8ee9b5add"},
+{"date":"2026-09-24","mission":"ENT (NEO) & comptes","tache":"Code ENT pour le remplaçant M. NAJI","precision":"","demandeur":"Collègue","minutes":5,"statut":"Terminé","hors":true,"remarque":"","id":"seed-ede60e1d3efd"},
+{"date":"2026-09-24","mission":"Projet PILOTIS","tache":"Réunion Teams PILOTIS","precision":"","demandeur":"SYN / Département","minutes":135,"statut":"Terminé","hors":true,"remarque":"Sur jour de repos","id":"seed-7c3a14fa1c0a"},
+{"date":"2026-09-24","mission":"Réseau pédagogique & licences","tache":"Contact Pulp Info au sujet des licences du collège","precision":"","demandeur":"Initiative du référent","minutes":15,"statut":"Terminé","hors":true,"remarque":"","id":"seed-1f97386adf5f"},
+{"date":"2026-09-27","mission":"Projet PILOTIS","tache":"Suite de la réunion Teams : vérification des différentes demandes formulées","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":"Dimanche","id":"seed-573b6f43e60a"},
+{"date":"2026-09-27","mission":"ENT (NEO) & comptes","tache":"Problème d'accès ENT de Mme MONTEIRO via la boîte mail académique","precision":"","demandeur":"Collègue","minutes":20,"statut":"Terminé","hors":true,"remarque":"Dimanche","id":"seed-177eecb13943"},
+{"date":"2026-09-27","mission":"ENT (NEO) & comptes","tache":"Mail à la direction et au secrétariat : compte de Mme MONTEIRO et autorisation parentale","precision":"","demandeur":"Direction","minutes":20,"statut":"Terminé","hors":true,"remarque":"Dimanche","id":"seed-db09ba1b400b"},
+{"date":"2026-09-28","mission":"ENT (NEO) & comptes","tache":"Réponse code ENT à Cristina","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-c681e605bd37"},
+{"date":"2026-09-28","mission":"ENT (NEO) & comptes","tache":"Actualité ENT : convention tablettes (demande de Mme RAGE)","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-8c540df194a6"},
+{"date":"2026-09-28","mission":"Réseau pédagogique & licences","tache":"Information Wi-Fi (« PDE »)","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":"Libellé d'origine peu lisible : à préciser","id":"seed-36cfd3a5bd8a"},
+{"date":"2026-09-29","mission":"Pix","tache":"Import Pix : demande du fichier SIECLE et téléversement","precision":"","demandeur":"Initiative du référent","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-0a4b09251125"},
+{"date":"2026-09-29","mission":"Matériel & maintenance","tache":"Passage de M. KHAMLA (SYN) au collège et point sur les actions réalisées","precision":"","demandeur":"SYN / Département","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite (non datée dans l'original) – durée à compléter","id":"seed-35b8aa8c1129"},
+{"date":"2026-09-29","mission":"Matériel & maintenance","tache":"Échange de SMS pour régler le problème d'écran de M. COUPRIE","precision":"","demandeur":"Collègue","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite – nom à vérifier (« Couri ») – durée à compléter","id":"seed-c9fccf8d5763"},
+{"date":"2026-09-29","mission":"ENT (NEO) & comptes","tache":"Réponse au mail du secrétariat concernant deux comptes","precision":"","demandeur":"Secrétariat / gestion","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite – durée à compléter","id":"seed-029bfb815a38"},
+{"date":"2026-09-29","mission":"Pix","tache":"Message de rappel Pix sur PRONOTE : point sur le parcours de rentrée","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Date déduite – durée à compléter","id":"seed-04f0d882286b"},
+{"date":"2026-09-30","mission":"Réseau pédagogique & licences","tache":"Vérification des fiches réseau (salle de permanence, salle ULIS, CDI)","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter","id":"seed-7cb875d66cd1"},
+{"date":"2026-09-30","mission":"Site internet & communication","tache":"Affichage de la permanence numérique du collège","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter","id":"seed-ad8a5458a1fa"},
+{"date":"2026-09-30","mission":"ENT (NEO) & comptes","tache":"Code élève et ticket pour un élève de 6E","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":"Date déduite","id":"seed-70efd9085113"},
+{"date":"2026-09-30","mission":"Projet PILOTIS","tache":"Réponse par mail aux questions de M. MARTINS (SYN)","precision":"","demandeur":"SYN / Département","minutes":20,"statut":"Terminé","hors":true,"remarque":"Date déduite","id":"seed-3da84202a685"},
+{"date":"2026-10-01","mission":"Pix","tache":"Réponse aux questions de Mme NOMBELA","precision":"","demandeur":"Collègue","minutes":30,"statut":"Terminé","hors":true,"remarque":"","id":"seed-86f1f43532d2"},
+{"date":"2026-10-01","mission":"Écrans dynamiques","tache":"Retrait d'une affiche à la demande de M. HUE","precision":"","demandeur":"Vie scolaire (CPE)","minutes":null,"statut":"Terminé","hors":true,"remarque":"Durée à compléter","id":"seed-23af85ad2c34"},
+{"date":"2026-10-01","mission":"GAR & ressources numériques","tache":"Affectation GAR Pearltrees et autres ressources : problème de licences, traitement un par un","precision":"","demandeur":"Initiative du référent","minutes":20,"statut":"Terminé","hors":true,"remarque":"","id":"seed-2fe16c18ee34"},
+{"date":"2026-10-01","mission":"Projet PILOTIS","tache":"PILOTIS : audit de l'établissement salle par salle (44 espaces : postes, matériel raccordé, prises réseau, logiciels utilisés)","precision":"","demandeur":"SYN / Département","minutes":360,"statut":"Terminé","hors":true,"remarque":"Estimation (environ 8 min par salle) – audit de septembre à début octobre, dernier relevé le 01/10","id":"seed-8b19e91483ba"},
+{"date":"2026-10-04","mission":"Pix","tache":"Point Pix : message PRONOTE et synthèse","precision":"","demandeur":"Initiative du référent","minutes":45,"statut":"Terminé","hors":true,"remarque":"Dimanche","id":"seed-96bcbf30a080"},
+{"date":"2026-10-05","mission":"Projet PILOTIS","tache":"Lecture et revue du catalogue logiciel PILOTIS","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":"","id":"seed-d1ccaaff9634"},
+{"date":"2026-10-05","mission":"Matériel & maintenance","tache":"Ticket SYN : vidéoprojecteur salle 215, ampoule usée et surchauffe (M. GRENIER) – nettoyage du filtre, remplacement de l'ampoule","precision":"","demandeur":"Collègue","minutes":10,"statut":"Terminé","hors":true,"remarque":"Ticket Synchronista I261005_00056 – intervention planifiée par SYN","id":"seed-249bc4e199e7"},
+{"date":"2026-10-06","mission":"Écrans dynamiques","tache":"Réduction du temps d'affichage sur les écrans dynamiques","precision":"","demandeur":"","minutes":20,"statut":"Terminé","hors":true,"remarque":"","id":"seed-ae192e1ed5a7"},
+{"date":"2026-10-06","mission":"Écrans dynamiques","tache":"Message de POULINGUE : image à refaire","precision":"","demandeur":"","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-0134b4f514aa"},
+{"date":"2026-10-06","mission":"ENT (NEO) & comptes","tache":"Résolution du problème PRONOTE de M. HERRAN (2 jours de suite)","precision":"","demandeur":"Collègue","minutes":15,"statut":"Terminé","hors":true,"remarque":"","id":"seed-23a4af39e304"},
+{"date":"2026-10-07","mission":"ENT (NEO) & comptes","tache":"Nouvel élève entrant (6B) : code ENT + mail","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":"Classe à vérifier (« 65 B » dans l'original)","id":"seed-811e887fb544"},
+{"date":"2026-10-07","mission":"Réseau pédagogique & licences","tache":"Nouvel élève entrant (6B) : code réseau + mail","precision":"","demandeur":"Élève / famille","minutes":10,"statut":"Terminé","hors":true,"remarque":"Classe à vérifier (« 65 B » dans l'original)","id":"seed-7838f0bfffa9"},
+{"date":"2026-10-07","mission":"ENT (NEO) & comptes","tache":"Récréation du mercredi : demande de codes Pix / ENT présentée par la direction","precision":"","demandeur":"Direction","minutes":20,"statut":"Terminé","hors":true,"remarque":"","id":"seed-36ed85167496"},
+{"date":"2026-10-07","mission":"Projet PILOTIS","tache":"PILOTIS : réalisation du fichier de recueil des besoins (besoins argumentés, retours par salle, croisement avec le catalogue SYN de 86 applications, dotation cible par salle ; versions interne et SYN)","precision":"","demandeur":"SYN / Département","minutes":480,"statut":"Terminé","hors":true,"remarque":"Estimation – fichier commencé le 18/09, finalisé le 07/10 vers minuit","id":"seed-bef5f8dc712c"},
+{"date":"2026-10-08","mission":"GAR & ressources numériques","tache":"Mise en place de Genially pour les professeurs (GENIUS)","precision":"","demandeur":"Initiative du référent","minutes":60,"statut":"Terminé","hors":true,"remarque":"","id":"seed-95acf7a5e60a"},
+{"date":"2026-10-08","mission":"Réseau pédagogique & licences","tache":"Ouverture du port AMON pour BCDI","precision":"","demandeur":"CDI","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-408661427264"},
+{"date":"2026-10-08","mission":"Écrans dynamiques","tache":"Mise en ligne d'une affiche du CDI","precision":"","demandeur":"CDI","minutes":10,"statut":"Terminé","hors":true,"remarque":"","id":"seed-bf960679da9e"},
+{"date":"2026-10-08","mission":"Projet PILOTIS","tache":"PILOTIS : envoi du fichier de recueil des besoins par mail","precision":"","demandeur":"SYN / Département","minutes":20,"statut":"Terminé","hors":true,"remarque":"Estimation","id":"seed-82c003e635e9"},
+{"date":"2026-10-09","mission":"ENT (NEO) & comptes","tache":"Messagerie parents ENT : contrôle parental","precision":"","demandeur":"Élève / famille","minutes":5,"statut":"Terminé","hors":true,"remarque":"Vendredi","id":"seed-e4b0af75a5f3"},
+{"date":"2026-10-09","mission":"GAR & ressources numériques","tache":"Message mail pour Genially","precision":"","demandeur":"Initiative du référent","minutes":15,"statut":"Terminé","hors":true,"remarque":"Vendredi","id":"seed-30649cade4f4"},
+{"date":"2026-10-09","mission":"GAR & ressources numériques","tache":"Gestion des comptes Genially","precision":"","demandeur":"Initiative du référent","minutes":20,"statut":"Terminé","hors":true,"remarque":"Date déduite – vendredi","id":"seed-f8b5d66fd40c"},
+{"date":"2026-10-09","mission":"Pix","tache":"Message de rappel Pix sur PRONOTE : point sur le parcours de rentrée","precision":"","demandeur":"Initiative du référent","minutes":null,"statut":"Terminé","hors":true,"remarque":"Vendredi – doublon possible avec le 29/09 – durée à compléter","id":"seed-34886cdec839"}];
 const SEED_VERSION = 3;
 const REMPLACEES_V2 = ["Demande de remplacement du vidéoprojecteur de la salle 106", "Demande de renouvellement de matériel (PC, VP, enceintes) pour Mme MOUILLET : transmission et suivi auprès de M. KHAMLA (SYN)"];
 const PARAMS_DEFAUT = {debut:"2026-09-01", semaines:36, imp:2500, perm:20};
@@ -465,17 +487,21 @@ const FIN_ANNEE = "2027-07-03";
 const CLE = "rupn-suivi-v1";
 
 /* ---------------- État et stockage ---------------- */
-let etat = {entrees:[], taches:{}, params:{...PARAMS_DEFAUT}};
+let etat = {entrees:[], taches:{}, params:{...PARAMS_DEFAUT}, supprimes:{}, paramsMaj:0, seedVersion:1};
 let stockageOK = true, premiereFois = false, majSeed = 0;
 function charger(){
   try{
     const brut = localStorage.getItem(CLE);
-    if(brut){ const o = JSON.parse(brut); etat.entrees = o.entrees||[]; etat.taches = o.taches||{}; etat.params = {...PARAMS_DEFAUT, ...(o.params||{})}; }
-    else { etat.entrees = SEED.map(e => ({id:uid(), ...e})); premiereFois = true; etat.seedVersion = SEED_VERSION; }
+    if(brut){ const o = JSON.parse(brut); etat.entrees = o.entrees||[]; etat.taches = o.taches||{}; etat.params = {...PARAMS_DEFAUT, ...(o.params||{})};
+      etat.supprimes = o.supprimes||{}; etat.paramsMaj = o.paramsMaj||0; etat.seedVersion = o.seedVersion||1; }
+    else { etat.entrees = SEED.map(e => ({...e})); premiereFois = true; etat.seedVersion = SEED_VERSION; }
+    // identifiants stables pour les interventions de départ (évite les doublons entre appareils synchronisés)
+    const cleSeed = e => e.date+"|"+e.mission+"|"+e.tache, idsSeed = new Map(SEED.map(e => [cleSeed(e), e.id]));
+    etat.entrees.forEach(e => { const id = idsSeed.get(cleSeed(e)); if(id && e.id !== id && !etat.entrees.some(x => x.id === id)) e.id = id; });
     // mise à jour des interventions de départ (v2 : tickets Synchronista)
     if((etat.seedVersion || 1) < SEED_VERSION){
       if((etat.seedVersion || 1) < 2) etat.entrees = etat.entrees.filter(e => !REMPLACEES_V2.includes(e.tache));
-      let n = 0; SEED.forEach(e => { if(!doublon(e)){ etat.entrees.push({id:uid(), ...e}); n++; } });
+      let n = 0; SEED.forEach(e => { if(!doublon(e) && !etat.supprimes[e.id]){ etat.entrees.push({...e}); n++; } });
       etat.seedVersion = SEED_VERSION; majSeed = n;
     }
     // les permanences régulières sont désormais comptées d'office : on retire les anciennes lignes
@@ -484,11 +510,12 @@ function charger(){
     etat.entrees.forEach(e => { if(e.mission === "Permanences numériques") e.hors = true; });
   }catch(e){ stockageOK = false; }
 }
-function sauver(){
+function sauverLocal(){
   try{ localStorage.setItem(CLE, JSON.stringify(etat)); stockageOK = true; }
   catch(e){ stockageOK = false; }
   majStockage();
 }
+function sauver(){ sauverLocal(); planifierSync(); }
 function majStockage(){
   const el = document.getElementById("stockage-etat");
   el.textContent = stockageOK
@@ -610,7 +637,7 @@ $("#form").addEventListener("submit", ev => {
   const e = {
     id: f.edition || uid(), date: $("#f-date").value, mission: f.mission, tache,
     precision: $("#f-precision").value.trim(), demandeur: f.demandeur || "", minutes: f.minutes,
-    statut: f.statut, hors: $("#f-hors").checked, remarque: $("#f-remarque").value.trim()
+    statut: f.statut, hors: $("#f-hors").checked, remarque: $("#f-remarque").value.trim(), maj: Date.now()
   };
   if(f.edition){
     const i = etat.entrees.findIndex(x => x.id === f.edition); if(i >= 0) etat.entrees[i] = e;
@@ -637,13 +664,13 @@ function editer(id){
 function supprimer(id, bouton){
   if(bouton.dataset.arme !== "1"){ bouton.dataset.arme = "1"; bouton.textContent = "Confirmer ?"; setTimeout(() => { bouton.dataset.arme = ""; bouton.textContent = "Supprimer"; }, 3000); return; }
   const e = etat.entrees.find(x => x.id === id);
-  etat.entrees = etat.entrees.filter(x => x.id !== id); sauver(); toutRedessiner();
-  toast("Intervention supprimée.", () => { etat.entrees.push(e); sauver(); toutRedessiner(); });
+  etat.entrees = etat.entrees.filter(x => x.id !== id); etat.supprimes[id] = Date.now(); sauver(); toutRedessiner();
+  toast("Intervention supprimée.", () => { delete etat.supprimes[id]; e.maj = Date.now(); etat.entrees.push(e); sauver(); toutRedessiner(); });
 }
 
 /* Permanence supplémentaire en un clic */
 $("#btn-perm").onclick = () => {
-  const e = {id:uid(), date:auj(), mission:"Permanences numériques", tache:"Permanence supplémentaire", precision:"", demandeur:"", minutes:+etat.params.perm || 20, statut:"Terminé", hors:true, remarque:""};
+  const e = {id:uid(), date:auj(), mission:"Permanences numériques", tache:"Permanence supplémentaire", precision:"", demandeur:"", minutes:+etat.params.perm || 20, statut:"Terminé", hors:true, remarque:"", maj:Date.now()};
   etat.entrees.push(e); sauver(); toutRedessiner();
   toast(`Permanence en plus notée (${fmtCourt(e.minutes)}). « Modifier » permet de changer la date ou la durée.`, () => { etat.entrees = etat.entrees.filter(x => x.id !== e.id); sauver(); toutRedessiner(); });
 };
@@ -771,7 +798,7 @@ function dessinerSynthese(){
 /* ---------------- Réglages ---------------- */
 const PCHAMPS = {debut:"#p-debut", semaines:"#p-semaines", imp:"#p-imp", perm:"#p-perm"};
 function remplirParams(){ Object.entries(PCHAMPS).forEach(([k,s]) => $(s).value = etat.params[k] ?? ""); }
-Object.entries(PCHAMPS).forEach(([k,s]) => $(s).addEventListener("change", () => { etat.params[k] = $(s).value; sauver(); toutRedessiner(); }));
+Object.entries(PCHAMPS).forEach(([k,s]) => $(s).addEventListener("change", () => { etat.params[k] = $(s).value; etat.paramsMaj = Date.now(); sauver(); toutRedessiner(); }));
 
 function dessinerTachesPerso(){
   const el = $("#taches-perso");
@@ -787,13 +814,13 @@ function dessinerTachesPerso(){
 
 $("#btn-effacer").onclick = function(){
   if(this.dataset.arme !== "1"){ this.dataset.arme = "1"; this.textContent = "Cliquez encore pour tout effacer"; setTimeout(() => { this.dataset.arme = ""; this.textContent = "Effacer toutes les saisies"; }, 4000); return; }
-  const avant = etat.entrees; etat.entrees = []; sauver(); toutRedessiner();
+  const avant = etat.entrees, t = Date.now(); avant.forEach(e => etat.supprimes[e.id] = t); etat.entrees = []; sauver(); toutRedessiner();
   this.dataset.arme = ""; this.textContent = "Effacer toutes les saisies";
-  toast("Toutes les saisies ont été effacées.", () => { etat.entrees = avant; sauver(); toutRedessiner(); });
+  toast("Toutes les saisies ont été effacées.", () => { avant.forEach(e => { delete etat.supprimes[e.id]; e.maj = Date.now(); }); etat.entrees = avant; sauver(); toutRedessiner(); });
 };
 
 $("#btn-seed").onclick = () => {
-  let n = 0; SEED.forEach(e => { if(!doublon(e)){ etat.entrees.push({id:uid(), ...e}); n++; } });
+  let n = 0; SEED.forEach(e => { if(!doublon(e)){ delete etat.supprimes[e.id]; etat.entrees = etat.entrees.filter(x => x.id !== e.id); etat.entrees.push({...e, maj:Date.now()}); n++; } });
   sauver(); toutRedessiner(); toast(n ? `${n} interventions rechargées.` : "Elles sont déjà toutes dans le journal.");
 };
 /* Sauvegarde JSON */
@@ -808,7 +835,7 @@ $("#imp-json").addEventListener("change", async ev => {
     const o = JSON.parse(await fi.text());
     if(!Array.isArray(o.entrees)) throw new Error();
     const ids = new Set(etat.entrees.map(e => e.id)); let n = 0;
-    o.entrees.forEach(e => { if(!ids.has(e.id) && !doublon(e)){ etat.entrees.push(e); n++; } });
+    o.entrees.forEach(e => { if(!ids.has(e.id) && !doublon(e)){ etat.entrees.push({...e, maj:Date.now()}); n++; } });
     Object.entries(o.taches||{}).forEach(([m,l]) => { etat.taches[m] = [...new Set([...(etat.taches[m]||[]), ...l])]; });
     etat.params = {...etat.params, ...(o.params||{})};
     sauver(); remplirParams(); toutRedessiner(); toast(`Sauvegarde restaurée : ${n} saisies ajoutées.`);
@@ -859,7 +886,7 @@ $("#imp-xlsx").addEventListener("change", async ev => {
       if(!date || !tache){ if(l.some(c => c !== "")) ignores++; return; }
       const minutes = C.min >= 0 && l[C.min] !== "" ? versMinutes(+l[C.min]) : versMinutes(l[C.duree]);
       const dem = String(C.dem >= 0 ? l[C.dem] : "").trim();
-      const e = {id:uid(), date, mission: mission || "Assistance & dépannage", tache,
+      const e = {id:uid(), maj:Date.now(), date, mission: mission || "Assistance & dépannage", tache,
         precision: C.precision >= 0 ? String(l[C.precision]||"").trim() : "",
         demandeur: DEMANDEURS.includes(dem) ? dem : "", minutes,
         statut: STATUTS.includes(String(l[C.statut]).trim()) ? String(l[C.statut]).trim() : "Terminé",
@@ -930,6 +957,98 @@ function exporterExcel(){
   toast("Fichier Excel téléchargé.");
 }
 
+
+/* ---------------- Synchronisation GitHub (dépôt privé de données) ---------------- */
+const CLE_SYNC = "rupn-sync-v1";
+const CLE_NUAGE = "nuage-github-cle"; // clé partagée par tous les outils de fatheyze.github.io
+let sync = {owner:"fatheyze", repo:"donnees-outils", path:"suivi-numerique.json"};
+const jeton = () => { try{ return localStorage.getItem(CLE_NUAGE) || ""; }catch(e){ return ""; } };
+let syncEnCours = false, syncRelance = false, syncTimer = null;
+function chargerSync(){ try{ const o = JSON.parse(localStorage.getItem(CLE_SYNC) || "null"); if(o){ delete o.token; sync = {...sync, ...o}; } }catch(e){} }
+function sauverSync(){ try{ localStorage.setItem(CLE_SYNC, JSON.stringify(sync)); }catch(e){} }
+const syncActive = () => !!(sync.owner && sync.repo && sync.path && jeton());
+function b64enc(str){ const o = new TextEncoder().encode(str); let s = ""; for(let i = 0; i < o.length; i += 0x8000) s += String.fromCharCode.apply(null, o.subarray(i, i + 0x8000)); return btoa(s); }
+function b64dec(b64){ const s = atob(b64.replace(/\s/g, "")); return new TextDecoder().decode(Uint8Array.from(s, c => c.charCodeAt(0))); }
+const urlDepot = () => `https://api.github.com/repos/${encodeURIComponent(sync.owner.trim())}/${encodeURIComponent(sync.repo.trim())}`;
+const urlFichier = () => `${urlDepot()}/contents/${sync.path.trim().split("/").map(encodeURIComponent).join("/")}`;
+const entetes = () => ({"Authorization": `Bearer ${jeton().trim()}`, "Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"});
+function etatSync(msg, ok){
+  const el = $("#sync-etat"); el.textContent = msg; el.style.color = ok === false ? "var(--marge)" : "";
+  const hd = $("#h-sync"); hd.textContent = syncActive() ? msg : ""; hd.style.color = ok === false ? "var(--marge)" : "";
+}
+function erreurGitHub(st){
+  if(st === 401) return "GitHub refuse la clé (expirée ou mal copiée).";
+  if(st === 403) return "cette clé n'a pas le droit d'écrire dans ce dépôt.";
+  if(st === 404) return "dépôt introuvable, ou la clé n'y a pas accès.";
+  return `erreur GitHub ${st}.`;
+}
+const cleContenu = e => [e.date, e.mission, e.tache, e.precision || "", e.minutes || 0].join("|");
+function empreinte(o){
+  return JSON.stringify([[...(o.entrees || [])].map(e => e.id + ":" + (e.maj || 0)).sort(), Object.keys(o.supprimes || {}).sort(),
+    Object.keys(o.taches || {}).sort().map(m => m + ":" + [...o.taches[m]].sort().join(",")), o.paramsMaj || 0]);
+}
+function fusionner(d){
+  const sup = {...(d.supprimes || {}), ...(etat.supprimes || {})};
+  const parId = new Map();
+  [...(d.entrees || []), ...etat.entrees].forEach(e => { if(sup[e.id]) return; const x = parId.get(e.id); if(!x || (e.maj || 0) > (x.maj || 0)) parId.set(e.id, e); });
+  const vus = new Set(), liste = []; // filet de sécurité : la même intervention saisie deux fois sous deux identifiants
+  [...parId.values()].forEach(e => { const k = cleContenu(e); if(vus.has(k)) return; vus.add(k); liste.push(e); });
+  etat.entrees = liste.sort((a, b) => a.date.localeCompare(b.date)); etat.supprimes = sup;
+  Object.entries(d.taches || {}).forEach(([m, l]) => { etat.taches[m] = [...new Set([...(etat.taches[m] || []), ...l])]; });
+  if((d.paramsMaj || 0) > (etat.paramsMaj || 0)){ etat.params = {...PARAMS_DEFAUT, ...(d.params || {})}; etat.paramsMaj = d.paramsMaj; }
+  etat.seedVersion = Math.max(etat.seedVersion || 1, d.seedVersion || 1);
+}
+function planifierSync(){ if(!syncActive()) return; clearTimeout(syncTimer); syncTimer = setTimeout(synchroniser, 1500); }
+async function synchroniser(){
+  if(!syncActive()) return;
+  if(syncEnCours){ syncRelance = true; return; }
+  syncEnCours = true; etatSync("Synchronisation en cours…");
+  try{
+    for(let essai = 0; essai < 3; essai++){
+      const r = await fetch(urlFichier() + "?t=" + Date.now(), {headers: entetes(), cache: "no-store"});
+      let sha = null, distant = null;
+      if(r.status === 200){ const j = await r.json(); sha = j.sha; distant = JSON.parse(b64dec(j.content)); }
+      else if(r.status === 404){ const rd = await fetch(urlDepot(), {headers: entetes(), cache: "no-store"}); if(rd.status !== 200) throw new Error(erreurGitHub(rd.status)); }
+      else throw new Error(erreurGitHub(r.status));
+      const avantLocal = empreinte(etat);
+      if(distant) fusionner(distant);
+      if(empreinte(etat) !== avantLocal){ sauverLocal(); remplirParams(); toutRedessiner(); }
+      if(distant && empreinte(distant) === empreinte(etat)){ etatSync(`Synchronisé à ${new Date().toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"})}`, true); return; }
+      const corps = {message: `Suivi numérique : mise à jour du ${new Date().toLocaleString("fr-FR")}`, content: b64enc(JSON.stringify(etat))};
+      if(sha) corps.sha = sha;
+      const p = await fetch(urlFichier(), {method: "PUT", headers: {...entetes(), "Content-Type": "application/json"}, body: JSON.stringify(corps)});
+      if(p.status === 200 || p.status === 201){ etatSync(`Synchronisé à ${new Date().toLocaleTimeString("fr-FR", {hour: "2-digit", minute: "2-digit"})}`, true); return; }
+      if(p.status === 409 || p.status === 422) continue; // modifié entre-temps sur un autre appareil : on recommence
+      throw new Error(erreurGitHub(p.status));
+    }
+    throw new Error("un autre appareil enregistre en même temps, réessayez.");
+  }catch(e){
+    etatSync("Synchronisation impossible : " + (e instanceof TypeError ? "pas de connexion à GitHub." : e.message) + " Vos saisies restent enregistrées sur cet appareil.", false);
+  }finally{
+    syncEnCours = false;
+    if(syncRelance){ syncRelance = false; synchroniser(); }
+  }
+}
+function remplirSync(){
+  $("#s-owner").value = sync.owner; $("#s-repo").value = sync.repo; $("#s-path").value = sync.path; $("#s-token").value = "";
+  $("#s-token").placeholder = jeton() ? "Clé déjà enregistrée sur ce navigateur (laisser vide pour la garder)" : "github_pat_…";
+  if(!syncActive()) etatSync("Synchronisation non configurée sur cet appareil : vos saisies restent dans ce navigateur.");
+}
+$("#btn-sync-ok").onclick = () => {
+  sync.owner = $("#s-owner").value.trim(); sync.repo = $("#s-repo").value.trim(); sync.path = $("#s-path").value.trim() || "suivi-numerique.json";
+  if($("#s-token").value.trim()){ try{ localStorage.setItem(CLE_NUAGE, $("#s-token").value.trim()); }catch(e){} }
+  if(!syncActive()){ etatSync("Collez d'abord votre clé GitHub dans la case.", false); return; }
+  sauverSync(); remplirSync(); synchroniser();
+};
+$("#btn-sync-now").onclick = () => { if(syncActive()) synchroniser(); else etatSync("Renseignez d'abord la synchronisation ci-dessus.", false); };
+$("#btn-sync-off").onclick = function(){
+  if(this.dataset.arme !== "1"){ this.dataset.arme = "1"; this.textContent = "Confirmer : vos autres outils seront aussi déconnectés"; setTimeout(() => { this.dataset.arme = ""; this.textContent = "Effacer la clé de ce navigateur"; }, 4000); return; }
+  this.dataset.arme = ""; this.textContent = "Effacer la clé de ce navigateur";
+  try{ localStorage.removeItem(CLE_NUAGE); }catch(e){}
+  remplirSync(); etatSync("Clé effacée de ce navigateur. Vos saisies restent ici, sans synchronisation.");
+};
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") planifierSync(); });
+
 /* ---------------- Onglets ---------------- */
 function ouvrir(id){
   document.querySelectorAll("nav.onglets button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.onglet === id)));
@@ -944,7 +1063,8 @@ function toutRedessiner(){
   if(f.mission && !f.edition){ const v = $("#f-tache").value; remplirTaches(); if([...$("#f-tache").options].some(o => o.value === v)) $("#f-tache").value = v; $("#nouvelle-tache").hidden = $("#f-tache").value !== "__autre"; }
 }
 
-charger(); if(premiereFois || majSeed) sauver(); remplirParams(); reinitForm(); toutRedessiner();
+chargerSync(); charger(); if(premiereFois || majSeed) sauverLocal(); remplirParams(); remplirSync(); reinitForm(); toutRedessiner();
+if(syncActive()) synchroniser();
 if(premiereFois) setTimeout(() => toast(`${etat.entrees.length} interventions déjà chargées depuis votre tableau.`), 300);
 else if(majSeed) setTimeout(() => toast(`${majSeed} interventions ajoutées à votre journal.`), 300);
 try{ const o = sessionStorage.getItem("rupn-onglet"); if(o) ouvrir(o); }catch(e){}
