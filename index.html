@@ -124,7 +124,39 @@ tr.total td{font-weight:700;border-top:2px solid var(--texte)}
 .taches-perso li{display:flex;justify-content:space-between;gap:10px;padding:4px 0;border-bottom:1px dashed var(--ligne)}
 .taches-perso ul{list-style:none;padding:0;margin:6px 0 12px}
 
+/* Signalements */
+.pastille{display:inline-block;min-width:20px;padding:0 6px;border-radius:999px;background:var(--marge);color:#fff;font-size:.78rem;line-height:20px;text-align:center;margin-left:4px}
+.pastille[hidden]{display:none}
+.demande{display:grid;grid-template-columns:6px 1fr;gap:12px;background:var(--carte);border:1px solid var(--ligne);border-radius:10px;padding:12px 14px 12px 0;margin-bottom:10px}
+.demande .barre{border-radius:0 3px 3px 0}
+.demande.urgente{border-color:var(--marge);box-shadow:inset 0 0 0 1px var(--marge)}
+.demande.finie{opacity:.72}
+.demande .corps{display:flex;flex-direction:column;gap:6px;min-width:0}
+.dm-tete{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.dm-tete b{font-size:1.05rem;margin-right:4px}
+.dm-desc{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.demande .m{color:var(--doux);font-size:.88rem;margin:0}
+.badge.urg{color:var(--marge);font-weight:700}
+.badge.fait{color:var(--ok)}
+.badge.sig{color:var(--encre-2)}
+.dm-sous{font-size:1rem;color:var(--doux);margin:22px 0 10px}
+.syn{background:var(--papier);border:1px dashed var(--ligne);border-radius:10px;padding:12px 14px;margin:4px 0 0}
+.syn-etapes{margin:0;padding-left:22px;display:grid;gap:12px}
+.syn-etapes li::marker{font-weight:700;color:var(--encre-2)}
+.syn-champ{display:block;font-weight:700;font-size:.92rem;margin-bottom:4px}
+.syn-val{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.syn-val input,.syn-val textarea{flex:1 1 260px;min-width:0;font:inherit;font-size:.9rem;padding:7px 9px;border:1px solid var(--ligne);border-radius:8px;background:var(--carte);color:inherit}
+.syn-val textarea{resize:vertical;line-height:1.45}
+.syn-val .aide{align-self:center}
+.badge.syn{color:var(--encre)}
+.sig-lien{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+#sig-qr{width:150px;height:150px;image-rendering:pixelated;border:1px solid var(--ligne);border-radius:8px;background:#fff}
+h3.sous{font-size:1rem;margin:18px 0 8px;color:var(--texte)}
+a.btn{display:inline-flex;align-items:center;text-decoration:none}
+a.btn.desactive{opacity:.5}
+code.sujet{font-size:.95rem;background:var(--papier);border:1px solid var(--ligne);border-radius:6px;padding:2px 8px;overflow-wrap:anywhere}
 @media (max-width:640px){
+  .sig-lien{grid-template-columns:1fr}
   .ligne2,.filtres{grid-template-columns:1fr}
   .missions{grid-template-columns:1fr 1fr}
   header.cahier{padding-left:58px}
@@ -155,6 +187,7 @@ tr.total td{font-weight:700;border-top:2px solid var(--texte)}
 
 <nav class="onglets" role="tablist" aria-label="Sections">
   <button role="tab" aria-selected="true" aria-controls="saisir" data-onglet="saisir">Saisir</button>
+  <button role="tab" aria-selected="false" aria-controls="demandes" data-onglet="demandes">Demandes reçues<span class="pastille" id="nb-demandes" hidden>0</span></button>
   <button role="tab" aria-selected="false" aria-controls="journal" data-onglet="journal">Journal</button>
   <button role="tab" aria-selected="false" aria-controls="synthese" data-onglet="synthese">Synthèse</button>
   <button role="tab" aria-selected="false" aria-controls="reglages" data-onglet="reglages">Réglages et fichiers</button>
@@ -244,6 +277,17 @@ tr.total td{font-weight:700;border-top:2px solid var(--texte)}
   </div>
 </section>
 
+<!-- ============ DEMANDES REÇUES ============ -->
+<section id="demandes" role="tabpanel" hidden>
+  <div class="bloc" id="dm-config" hidden>
+    <h2>Recevoir les signalements de vos collègues</h2>
+    <p class="aide" style="margin-top:0">Vos collègues remplissent un court formulaire. Chaque signalement arrive ici et dans votre journal en « À faire », déjà rempli : il ne reste qu'à noter le temps passé.</p>
+    <div class="actions" style="margin-top:10px"><button class="btn" type="button" data-ouvrir="reglages">Mettre en place dans les réglages</button></div>
+  </div>
+  <p class="aide" id="dm-total"></p>
+  <div id="dm-liste"></div>
+</section>
+
 <!-- ============ JOURNAL ============ -->
 <section id="journal" role="tabpanel" hidden>
   <div class="filtres">
@@ -309,6 +353,53 @@ tr.total td{font-weight:700;border-top:2px solid var(--texte)}
       <button class="btn danger" type="button" id="btn-sync-off">Effacer la clé de ce navigateur</button>
     </div>
     <p class="aide" id="sync-etat" role="status"></p>
+  </div>
+
+  <div class="bloc" id="bloc-sig">
+    <h2>Signalements des collègues</h2>
+    <div id="sig-inactif">
+      <p class="aide" style="margin-top:0">Donnez à vos collègues un lien, ou un QR code, vers un formulaire « Signaler un problème numérique ». Chaque signalement arrive tout seul dans votre journal en « À faire », déjà rempli, et une alerte peut arriver sur votre téléphone. Les signalements sont chiffrés : vous seul pouvez les lire.</p>
+      <div class="actions" style="margin-top:10px"><button class="btn" type="button" id="sig-activer">Activer les signalements</button></div>
+    </div>
+    <div id="sig-actif" hidden>
+      <h3 class="sous">1. Le lien à donner à vos collègues</h3>
+      <div class="sig-lien">
+        <canvas id="sig-qr" aria-label="QR code du formulaire de signalement"></canvas>
+        <div>
+          <input type="text" id="sig-url" readonly aria-label="Lien du formulaire">
+          <div class="actions" style="margin-top:8px">
+            <button class="btn" type="button" id="sig-copier">Copier le lien</button>
+            <a class="btn sec" id="sig-ouvrir" target="_blank" rel="noopener">Voir le formulaire</a>
+            <button class="btn sec" type="button" id="sig-test">Envoyer un signalement de test</button>
+          </div>
+        </div>
+      </div>
+      <p class="aide">À envoyer par mail à l'équipe, ou à afficher en salle des profs (clic droit sur le QR code pour l'enregistrer en image).</p>
+      <h3 class="sous">Dans l'ENT (page « Ticket numérique »)</h3>
+      <p class="aide" style="margin-top:0">Dans votre page de l'ENT, cliquez sur l'icône « &lt;/&gt; » en haut à droite, choisissez « Code HTML », collez le code, puis revenez en « Éditeur de texte » et enregistrez.</p>
+      <textarea id="sig-ent" rows="4" readonly aria-label="Code à coller dans l'ENT" style="font-family:ui-monospace,Menlo,monospace;font-size:.82rem"></textarea>
+      <div class="actions" style="margin-top:8px">
+        <button class="btn" type="button" id="sig-ent-copier">Copier le code (bouton « Signaler un problème »)</button>
+        <button class="btn sec" type="button" id="sig-ent-integre">Copier la version intégrée (formulaire dans la page)</button>
+      </div>
+      <p class="aide">Commencez par la version bouton : elle marche partout. La version intégrée affiche le formulaire directement dans la page, si l'ENT accepte ce type de contenu.</p>
+      <h3 class="sous">2. L'alerte sur votre téléphone</h3>
+      <ol class="aide" style="padding-left:1.2em;margin:0">
+        <li>Installez l'application gratuite <b>ntfy</b> (Android ou iPhone).</li>
+        <li>Touchez « + » et collez ce nom de sujet : <code class="sujet" id="sig-alerte"></code> <button class="mini" type="button" id="sig-alerte-copier">Copier</button></li>
+        <li>Laissez le serveur proposé (ntfy.sh) et validez. Faites un signalement de test pour vérifier.</li>
+      </ol>
+      <p class="aide">L'alerte indique seulement le type de problème, la salle et l'urgence, jamais le nom du collègue ni la description.</p>
+      <h3 class="sous">3. Ne rien perdre, même pendant les vacances</h3>
+      <p class="aide" style="margin-top:0">Le relais qui transporte les signalements ne les garde que quelques heures. Une copie automatique, toutes les heures, les range dans votre dépôt privé « donnees-outils » (fichier signalements.json, illisible sans votre clé).</p>
+      <div class="actions" style="margin-top:8px">
+        <a class="btn" id="sig-workflow" target="_blank" rel="noopener">Créer la copie automatique sur GitHub</a>
+        <button class="btn sec" type="button" id="sig-workflow-copier">Copier le fichier</button>
+      </div>
+      <p class="aide">Sur la page GitHub qui s'ouvre, le fichier est déjà rempli : cliquez sur « Commit changes… », puis sur « Commit changes ». À faire une seule fois.</p>
+      <p class="aide" id="sig-etat" role="status"></p>
+      <div class="actions"><button class="btn sec" type="button" id="sig-verifier">Vérifier maintenant</button></div>
+    </div>
   </div>
 
   <div class="bloc">
@@ -487,13 +578,14 @@ const FIN_ANNEE = "2027-07-03";
 const CLE = "rupn-suivi-v1";
 
 /* ---------------- État et stockage ---------------- */
-let etat = {entrees:[], taches:{}, params:{...PARAMS_DEFAUT}, supprimes:{}, paramsMaj:0, seedVersion:1};
+let etat = {entrees:[], taches:{}, params:{...PARAMS_DEFAUT}, supprimes:{}, paramsMaj:0, seedVersion:1, signal:null, sigVus:{}};
 let stockageOK = true, premiereFois = false, majSeed = 0;
 function charger(){
   try{
     const brut = localStorage.getItem(CLE);
     if(brut){ const o = JSON.parse(brut); etat.entrees = o.entrees||[]; etat.taches = o.taches||{}; etat.params = {...PARAMS_DEFAUT, ...(o.params||{})};
-      etat.supprimes = o.supprimes||{}; etat.paramsMaj = o.paramsMaj||0; etat.seedVersion = o.seedVersion||1; }
+      etat.supprimes = o.supprimes||{}; etat.paramsMaj = o.paramsMaj||0; etat.seedVersion = o.seedVersion||1;
+      etat.signal = o.signal||null; etat.sigVus = o.sigVus||{}; }
     else { etat.entrees = SEED.map(e => ({...e})); premiereFois = true; etat.seedVersion = SEED_VERSION; }
     // identifiants stables pour les interventions de départ (évite les doublons entre appareils synchronisés)
     const cleSeed = e => e.date+"|"+e.mission+"|"+e.tache, idsSeed = new Map(SEED.map(e => [cleSeed(e), e.id]));
@@ -640,7 +732,9 @@ $("#form").addEventListener("submit", ev => {
     statut: f.statut, hors: $("#f-hors").checked, remarque: $("#f-remarque").value.trim(), maj: Date.now()
   };
   if(f.edition){
-    const i = etat.entrees.findIndex(x => x.id === f.edition); if(i >= 0) etat.entrees[i] = e;
+    const i = etat.entrees.findIndex(x => x.id === f.edition);
+    if(i >= 0 && etat.entrees[i].sig) e.sig = etat.entrees[i].sig;
+    if(i >= 0) etat.entrees[i] = e;
     toast("Intervention modifiée.");
   } else {
     etat.entrees.push(e);
@@ -681,7 +775,7 @@ function ligneHTML(e){
   const meta = [m.court, e.demandeur, e.precision].filter(Boolean).map(esc).join(" · ");
   return `<div class="entree">
     <div class="barre" style="background:${m.c}"></div>
-    <div><div class="t">${esc(e.tache)}${e.statut && e.statut !== "Terminé" ? `<span class="badge encours">${esc(e.statut)}</span>` : ""}</div>
+    <div><div class="t">${esc(e.tache)}${e.statut && e.statut !== "Terminé" ? `<span class="badge encours">${esc(e.statut)}</span>` : ""}${e.sig ? `<span class="badge sig">signalement</span>` : ""}</div>
       <div class="m">${meta}${e.remarque ? ` · <i>${esc(e.remarque)}</i>` : ""}</div>
       <div><button class="mini" data-edit="${e.id}">Modifier</button><button class="mini rouge" data-suppr="${e.id}">Supprimer</button></div></div>
     <div class="d">${e.minutes ? fmtCourt(e.minutes) : '<span style="color:var(--attention)">durée ?</span>'}</div>
@@ -985,7 +1079,8 @@ function erreurGitHub(st){
 const cleContenu = e => [e.date, e.mission, e.tache, e.precision || "", e.minutes || 0].join("|");
 function empreinte(o){
   return JSON.stringify([[...(o.entrees || [])].map(e => e.id + ":" + (e.maj || 0)).sort(), Object.keys(o.supprimes || {}).sort(),
-    Object.keys(o.taches || {}).sort().map(m => m + ":" + [...o.taches[m]].sort().join(",")), o.paramsMaj || 0]);
+    Object.keys(o.taches || {}).sort().map(m => m + ":" + [...o.taches[m]].sort().join(",")), o.paramsMaj || 0,
+    o.signal ? o.signal.pub : "", Object.keys(o.sigVus || {}).sort()]);
 }
 function fusionner(d){
   const sup = {...(d.supprimes || {}), ...(etat.supprimes || {})};
@@ -997,6 +1092,9 @@ function fusionner(d){
   Object.entries(d.taches || {}).forEach(([m, l]) => { etat.taches[m] = [...new Set([...(etat.taches[m] || []), ...l])]; });
   if((d.paramsMaj || 0) > (etat.paramsMaj || 0)){ etat.params = {...PARAMS_DEFAUT, ...(d.params || {})}; etat.paramsMaj = d.paramsMaj; }
   etat.seedVersion = Math.max(etat.seedVersion || 1, d.seedVersion || 1);
+  // signalements : une seule paire de clés pour tous les appareils (la plus ancienne l'emporte)
+  if(d.signal && (!etat.signal || (d.signal.cree || 0) < (etat.signal.cree || 0))) etat.signal = d.signal;
+  etat.sigVus = {...(d.sigVus || {}), ...(etat.sigVus || {})};
 }
 function planifierSync(){ if(!syncActive()) return; clearTimeout(syncTimer); syncTimer = setTimeout(synchroniser, 1500); }
 async function synchroniser(){
@@ -1049,6 +1147,608 @@ $("#btn-sync-off").onclick = function(){
 };
 document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") planifierSync(); });
 
+/* ---------------- Signalements des collègues ----------------
+   Les collègues remplissent signaler.html. Le signalement est chiffré avec la clé publique
+   du référent (ECDH P-256 + AES-GCM) et déposé sur le relais ntfy.sh ; une copie automatique
+   horaire (GitHub Actions) le range dans signalements.json du dépôt privé. Ici, on le déchiffre
+   avec la clé privée (synchronisée avec le reste des données) et on crée l'intervention « À faire ». */
+const RELAIS = "https://ntfy.sh/";
+const TACHE_SIG = "Signalement reçu via le formulaire";
+const FICHIER_SIG = "signalements.json";
+const sigB64url = u8 => { let s = ""; u8.forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); };
+const sigDeB64url = s => Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+const sigDispo = () => !!(window.crypto && crypto.subtle && window.isSecureContext);
+async function sigHex(s, n){ const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s))); return [...h.slice(0, n)].map(b => b.toString(16).padStart(2,"0")).join(""); }
+let sigCanauxCache = null, sigPriv = null, sigPrivPour = null;
+async function sigCanaux(){
+  if(!etat.signal) return null;
+  if(sigCanauxCache && sigCanauxCache.pub === etat.signal.pub) return sigCanauxCache;
+  sigCanauxCache = { pub: etat.signal.pub, donnees: "rupnsig_" + await sigHex("donnees|" + etat.signal.pub, 12), alerte: "rupnalerte_" + await sigHex("alerte|" + etat.signal.pub, 12) };
+  return sigCanauxCache;
+}
+async function sigClePrivee(){
+  if(sigPriv && sigPrivPour === etat.signal.pub) return sigPriv;
+  sigPriv = await crypto.subtle.importKey("jwk", etat.signal.priv, {name:"ECDH", namedCurve:"P-256"}, false, ["deriveKey"]);
+  sigPrivPour = etat.signal.pub;
+  return sigPriv;
+}
+async function sigDechiffrer(txt){
+  try{
+    const [v, e, i, c] = String(txt).split(".");
+    if(v !== "S1" || !e || !i || !c) return null;
+    const eph = await crypto.subtle.importKey("raw", sigDeB64url(e), {name:"ECDH", namedCurve:"P-256"}, false, []);
+    const cle = await crypto.subtle.deriveKey({name:"ECDH", public:eph}, await sigClePrivee(), {name:"AES-GCM", length:256}, false, ["decrypt"]);
+    const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:sigDeB64url(i)}, cle, sigDeB64url(c));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }catch(err){ return null; }
+}
+// Chiffrement côté référent : sert au signalement de test
+async function sigChiffrer(obj){
+  const pub = await crypto.subtle.importKey("raw", sigDeB64url(etat.signal.pub), {name:"ECDH", namedCurve:"P-256"}, false, []);
+  const eph = await crypto.subtle.generateKey({name:"ECDH", namedCurve:"P-256"}, true, ["deriveKey"]);
+  const cle = await crypto.subtle.deriveKey({name:"ECDH", public:pub}, eph.privateKey, {name:"AES-GCM", length:256}, false, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM", iv}, cle, new TextEncoder().encode(JSON.stringify(obj))));
+  return "S1." + sigB64url(new Uint8Array(await crypto.subtle.exportKey("raw", eph.publicKey))) + "." + sigB64url(iv) + "." + sigB64url(ct);
+}
+
+// Un signalement déchiffré devient une intervention « À faire », déjà remplie
+function sigEntree(m, s){
+  const mission = MISSIONS.some(x => x.id === s.mission) ? s.mission : "Assistance & dépannage";
+  const recu = new Date((m.time || Date.now() / 1000) * 1000);
+  const l = etat.taches[mission] = etat.taches[mission] || [];
+  if(!l.includes(TACHE_SIG)) l.push(TACHE_SIG);
+  const salle = String(s.salle || "").trim();
+  const txt = v => String(v || "").trim();
+  return {
+    id: "sig-" + m.id, date: iso(recu), mission, tache: TACHE_SIG,
+    precision: [salle && (/^\d/.test(salle) ? "Salle " + salle : salle), txt(s.materiel), txt(s.nom)].filter(Boolean).join(" · ").slice(0, 200),
+    demandeur: DEMANDEURS.includes(s.demandeur) ? s.demandeur : "Collègue", minutes: null, statut: "À faire", hors: true,
+    remarque: [s.urgence && "URGENT", txt(s.description), s.depuis && "Depuis : " + String(s.depuis).toLowerCase(), s.tente && "Déjà essayé : " + txt(s.tente), s.dispo && "Disponibilités : " + txt(s.dispo)].filter(Boolean).join(" · ").slice(0, 1500),
+    maj: Date.now(),
+    sig: { nom: txt(s.nom), fonction: txt(s.fonction), salle, materiel: txt(s.materiel), description: txt(s.description), depuis: txt(s.depuis), urgence: txt(s.urgence), tente: txt(s.tente), dispo: txt(s.dispo), type: txt(s.type), recu: recu.toISOString() }
+  };
+}
+
+let sigFile = Promise.resolve(), sigDerniere = null, sigEtatRelais = "", sigEs = null;
+function sigTraiter(msgs, source){
+  // une seule passe à la fois : la réception en direct et la vérification régulière ne se marchent pas dessus
+  sigFile = sigFile.then(async () => {
+    if(!etat.signal || !sigDispo()) return;
+    let n = 0, change = false;
+    const nouveaux = [];
+    for(const m of msgs){
+      if(!m || !m.id || !m.message || etat.sigVus[m.id]) continue;
+      const s = await sigDechiffrer(m.message);
+      etat.sigVus[m.id] = Date.now(); change = true;
+      if(!s || etat.entrees.some(e => e.id === "sig-" + m.id) || etat.supprimes["sig-" + m.id]) continue;
+      const e = sigEntree(m, s);
+      etat.entrees.push(e); nouveaux.push(e); n++;
+    }
+    if(change){ sauver(); toutRedessiner(); }
+    if(n) toast(n === 1 ? `Nouveau signalement : ${mis(nouveaux[0].mission).court}${nouveaux[0].sig.salle ? ", " + nouveaux[0].sig.salle : ""}.` : `${n} nouveaux signalements dans « Demandes reçues ».`);
+  }).catch(() => {});
+  return sigFile;
+}
+async function sigLireRelais(){
+  const c = await sigCanaux(); if(!c) return [];
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 10000);
+  try{
+    const r = await fetch(RELAIS + c.donnees + "/json?poll=1&since=all", {signal:ctl.signal, cache:"no-store"});
+    if(!r.ok) throw new Error(String(r.status));
+    sigEtatRelais = "";
+    return (await r.text()).split("\n").filter(Boolean).map(l => { try{ return JSON.parse(l); }catch(e){ return null; } })
+      .filter(m => m && m.event === "message").map(m => ({id:m.id, time:m.time, message:m.message}));
+  }catch(e){ sigEtatRelais = "relais injoignable"; return []; }
+  finally{ clearTimeout(t); }
+}
+async function sigLireCopie(){
+  if(!syncActive()) return [];
+  try{
+    const r = await fetch(`${urlDepot()}/contents/${FICHIER_SIG}?t=${Date.now()}`, {headers: entetes(), cache:"no-store"});
+    if(r.status !== 200) return [];
+    const j = await r.json();
+    const l = JSON.parse(b64dec(j.content));
+    return Array.isArray(l) ? l : [];
+  }catch(e){ return []; }
+}
+async function sigVerifier(){
+  if(!etat.signal || !sigDispo()) return;
+  const [a, b] = await Promise.all([sigLireRelais(), sigLireCopie()]);
+  await sigTraiter([...b, ...a], "verif");
+  sigDerniere = new Date();
+  majSigEtat();
+}
+async function sigEcouter(){
+  if(sigEs){ sigEs.close(); sigEs = null; }
+  const c = await sigCanaux(); if(!c || !window.EventSource) return;
+  sigEs = new EventSource(RELAIS + c.donnees + "/sse");
+  sigEs.onmessage = ev => { try{ const m = JSON.parse(ev.data); if(m.event === "message") sigTraiter([{id:m.id, time:m.time, message:m.message}], "direct"); }catch(e){} };
+}
+let sigMinuterie = null;
+function demarrerSignalements(){
+  dessinerReglagesSig();
+  if(!etat.signal || !sigDispo()) return;
+  sigVerifier(); sigEcouter();
+  clearInterval(sigMinuterie);
+  sigMinuterie = setInterval(() => { if(document.visibilityState === "visible") sigVerifier(); }, 180000);
+}
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && etat.signal) sigVerifier(); });
+
+// ---------------- Réglages : activation, lien, alerte, copie automatique ----------------
+// Adresse de la page : en aperçu ou hors ligne, on retombe sur l'adresse publiée
+const ADRESSE_SUIVI = (() => { try{ const u = new URL("./", location.href); return /^https?:$/.test(u.protocol) ? u.href : "https://fatheyze.github.io/suivi-numerique/"; }catch(e){ return "https://fatheyze.github.io/suivi-numerique/"; } })();
+const lienSignaler = () => ADRESSE_SUIVI + "signaler.html#" + etat.signal.pub;
+function workflowYaml(c){
+  return `# Copie automatique des signalements (application Suivi du référent numérique).
+# Toutes les heures, recopie les signalements chiffrés du relais ntfy.sh dans signalements.json.
+# Ils restent illisibles sans la clé privée enregistrée dans suivi-numerique.json.
+name: Signalements
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: signalements
+jobs:
+  copier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recopier les nouveaux signalements
+        run: |
+          f=${FICHIER_SIG}
+          [ -f "$f" ] || echo '[]' > "$f"
+          curl -fsS "https://ntfy.sh/${c.donnees}/json?poll=1&since=all" -o recu.ndjson || exit 0
+          jq -s --slurpfile ancien "$f" '[ $ancien[0][], (.[] | select(.event == "message") | {id, time, message}) ] | unique_by(.id) | sort_by(.time)' recu.ndjson > nouveau.json
+          if cmp -s nouveau.json "$f"; then echo "Rien de nouveau"; exit 0; fi
+          mv nouveau.json "$f"
+          git config user.name "copie-signalements"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$f"
+          git commit -m "Signalements : copie automatique"
+          git pull --rebase
+          git push
+`;
+}
+function urlWorkflow(c){
+  return `https://github.com/${encodeURIComponent(sync.owner.trim())}/${encodeURIComponent(sync.repo.trim())}/new/main?filename=${encodeURIComponent(".github/workflows/signalements.yml")}&value=${encodeURIComponent(workflowYaml(c))}`;
+}
+// Code à coller dans une page de l'ENT (mode « Code HTML ») : un bouton, ou le formulaire intégré
+function codeEnt(lien, integre){
+  const bouton = `<div style="max-width:680px;margin:16px auto;padding:22px 24px;border:1px solid #D5DAE6;border-left:6px solid #D64545;border-radius:12px;background:#FBFCFE;font-family:Arial,Helvetica,sans-serif;color:#1B2233">
+<p style="margin:0 0 4px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#5B6478">Référent numérique · Collège Marcel Pagnol</p>
+<h2 style="margin:0 0 8px;font-size:24px;color:#1D3A8A">Un problème numérique ?</h2>
+<p style="margin:0 0 16px;font-size:16px;line-height:1.5">Ordinateur, vidéoprojecteur, Internet, ENT, PRONOTE, écrans… Signalez-le en une minute : votre demande arrive directement chez Fathey Zeghoudi.</p>
+<p style="margin:0"><a href="${lien}" target="_blank" rel="noopener" style="display:inline-block;background:#1D3A8A;color:#ffffff;padding:13px 24px;border-radius:8px;font-size:17px;font-weight:bold;text-decoration:none">Signaler un problème</a></p>
+<p style="margin:14px 0 0;font-size:13px;color:#5B6478">Le signalement est chiffré : seul le référent numérique peut le lire.</p>
+</div>`;
+  if(!integre) return bouton;
+  return `<iframe src="${lien}" title="Signaler un problème numérique" style="width:100%;max-width:760px;height:1250px;border:0;border-radius:12px;display:block;margin:16px auto"></iframe>
+<p style="text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px">Le formulaire ne s'affiche pas ? <a href="${lien}" target="_blank" rel="noopener">Ouvrez-le dans un nouvel onglet</a>.</p>`;
+}
+function majSigEtat(){
+  const el = $("#sig-etat"); if(!el) return;
+  const nb = etat.entrees.filter(e => e.sig).length;
+  const parts = [`${nb} signalement${nb > 1 ? "s" : ""} reçu${nb > 1 ? "s" : ""} au total`];
+  if(sigDerniere) parts.push(`dernière vérification à ${sigDerniere.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"})}`);
+  if(sigEtatRelais) parts.push(sigEtatRelais + " (réseau ?)");
+  if(!syncActive()) parts.push("synchronisation GitHub non configurée sur cet appareil : la copie automatique ne peut pas être lue ici");
+  el.textContent = parts.join(" · ") + ".";
+}
+async function dessinerReglagesSig(){
+  const actif = !!etat.signal;
+  $("#sig-inactif").hidden = actif; $("#sig-actif").hidden = !actif;
+  if(!sigDispo()){ $("#sig-inactif").hidden = false; $("#sig-activer").disabled = true; $("#sig-inactif .aide").textContent = "Cette fonction a besoin d'un navigateur récent, sur la page en ligne (https)."; return; }
+  if(!actif) return;
+  const c = await sigCanaux();
+  const lien = lienSignaler();
+  $("#sig-url").value = lien;
+  $("#sig-ent").value = codeEnt(lien, false);
+  $("#sig-ouvrir").href = lien;
+  $("#sig-alerte").textContent = c.alerte;
+  $("#sig-workflow").href = urlWorkflow(c);
+  $("#sig-workflow").classList.toggle("desactive", !syncActive());
+  dessinerQR($("#sig-qr"), lien);
+  majSigEtat();
+}
+async function copierTexte(t, bouton, ok){
+  try{ await navigator.clipboard.writeText(t); }
+  catch(e){ const ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); }catch(err){} ta.remove(); }
+  if(bouton){ const avant = bouton.textContent; bouton.textContent = ok || "Copié"; setTimeout(() => bouton.textContent = avant, 2000); }
+}
+$("#sig-activer").onclick = async () => {
+  if(etat.signal || !sigDispo()) return;
+  const kp = await crypto.subtle.generateKey({name:"ECDH", namedCurve:"P-256"}, true, ["deriveKey"]);
+  etat.signal = { pub: sigB64url(new Uint8Array(await crypto.subtle.exportKey("raw", kp.publicKey))), priv: await crypto.subtle.exportKey("jwk", kp.privateKey), cree: Date.now() };
+  sauver(); toast("Signalements activés. Donnez le lien à vos collègues.");
+  demarrerSignalements();
+};
+$("#sig-copier").onclick = function(){ copierTexte($("#sig-url").value, this, "Lien copié"); };
+$("#sig-ent-copier").onclick = function(){ copierTexte(codeEnt(lienSignaler(), false), this, "Code copié"); };
+$("#sig-ent-integre").onclick = function(){ copierTexte(codeEnt(lienSignaler(), true), this, "Code copié"); };
+$("#sig-alerte-copier").onclick = function(){ copierTexte($("#sig-alerte").textContent, this); };
+$("#sig-workflow-copier").onclick = async function(){ const c = await sigCanaux(); if(c) copierTexte(workflowYaml(c), this, "Fichier copié"); };
+$("#sig-workflow").addEventListener("click", ev => { if(!syncActive()){ ev.preventDefault(); toast("Configurez d'abord la synchronisation GitHub, plus haut."); } });
+$("#sig-verifier").onclick = () => { sigVerifier(); toast("Vérification des signalements…"); };
+$("#sig-test").onclick = async function(){
+  const c = await sigCanaux(); if(!c) return;
+  const s = {v:1, date:new Date().toISOString(), nom:"Test du référent", fonction:"Professeur", demandeur:"Initiative du référent", type:"autre", mission:"Assistance & dépannage",
+    salle:"Salle test", materiel:"", description:"Signalement de test envoyé depuis les réglages. Vous pouvez le supprimer.", urgence:"", tente:"", dispo:"Quand vous voulez"};
+  this.disabled = true;
+  try{
+    const r = await fetch(RELAIS + c.donnees, {method:"POST", body: await sigChiffrer(s), headers:{"Content-Type":"text/plain"}});
+    const p = new URLSearchParams({title:"Signalement : test · Salle test", priority:"3", tags:"wrench", click: ADRESSE_SUIVI + "#demandes"});
+    fetch(RELAIS + c.alerte + "?" + p, {method:"POST", body:"Signalement de test. Si vous lisez ceci sur votre téléphone, l'alerte fonctionne.", headers:{"Content-Type":"text/plain"}}).catch(() => {});
+    toast(r.ok ? "Signalement de test envoyé : il arrive dans « Demandes reçues »." : "Le relais a refusé l'envoi (" + r.status + ").");
+    if(r.ok) setTimeout(sigVerifier, 1500);
+  }catch(e){ toast("Envoi impossible : le réseau bloque peut-être le relais ntfy.sh."); }
+  finally{ this.disabled = false; }
+};
+
+// ---------------- Onglet « Demandes reçues » ----------------
+const sigOuvert = e => e.sig && e.statut !== "Terminé";
+function majPastille(){
+  const n = etat.entrees.filter(sigOuvert).length;
+  const p = $("#nb-demandes"); p.textContent = String(n); p.hidden = !n;
+}
+// ---- Ticket Synchronista (Seine-et-Yvelines Numérique) : un texte par champ du « Formulaire Incident » ----
+const SYN_SUJET = {materiel:"Matériel", tablette:"Tablette HS", ecrans:"Matériel", reseau:"Réseau", ent:"Application", gar:"Application", pix:"Application", site:"Application"};
+const estUrgent = s => /urgent|bloquant/i.test(s.urgence || "");
+const lieuDe = s => s.salle ? (/^\d/.test(s.salle) ? "Salle " + s.salle : s.salle) : "";
+function synSujet(s){
+  const t = (s.materiel + " " + s.description).toLowerCase();
+  if(/tablette|ipad/.test(t) && (s.type === "materiel" || s.type === "autre" || s.type === "tablette")) return "Tablette HS";
+  if(SYN_SUJET[s.type]) return SYN_SUJET[s.type];
+  if(/wi-?fi|internet|réseau|reseau|connexion/.test(t)) return "Réseau";
+  if(/logiciel|application|appli|site|compte|mot de passe/.test(t)) return "Application";
+  return "Matériel";
+}
+function synDescription(e){
+  const s = e.sig, m = mis(e.mission);
+  const coupe = (x, n) => x.length > n ? x.slice(0, n - 1).trimEnd() + "…" : x;
+  const debut = (s.description || "").split(/[.\n!?]/)[0].trim();
+  const redit = s.materiel && debut.toLowerCase().includes(s.materiel.toLowerCase()); // « Vidéoprojecteur : Le vidéoprojecteur… » → une seule fois
+  const quoi = s.materiel && !redit ? s.materiel + (debut ? " : " + coupe(debut, 60) : "") : (coupe(debut, 80) || s.materiel || m.court);
+  return coupe([estUrgent(s) && "URGENT", quoi, lieuDe(s)].filter(Boolean).join(" – "), 120);
+}
+function synCommentaire(e){
+  const s = e.sig;
+  return [
+    `Lieu : ${lieuDe(s) || "non précisé"}`,
+    s.materiel ? `Matériel concerné : ${s.materiel}` : "",
+    `Problème constaté : ${s.description}`,
+    s.depuis ? `Depuis : ${s.depuis.toLowerCase()}` : "",
+    `Urgence : ${estUrgent(s) ? "urgent, l'utilisateur ne peut pas travailler normalement" : "non urgent"}`,
+    s.tente ? `Déjà essayé : ${s.tente}` : "",
+    s.dispo ? `Disponibilités de l'utilisateur pour une intervention : ${s.dispo}` : "",
+    `Signalé par : ${s.nom}${s.fonction ? " (" + s.fonction.toLowerCase() + ")" : ""}, le ${dateFr(e.date)}`,
+    `Contact au collège : Fathey Zeghoudi, référent numérique, Collège Marcel Pagnol (Bonnières-sur-Seine)`
+  ].filter(Boolean).join("\n");
+}
+const texteTicket = e => `Description courte : ${synDescription(e)}\nSujet : ${synSujet(e.sig)}\n\n${synCommentaire(e)}`;
+function panneauSyn(e){
+  const s = e.sig, id = esc(e.id);
+  return `<ol class="syn-etapes">
+    <li><span class="syn-champ">Description courte</span>
+      <div class="syn-val"><input type="text" readonly value="${esc(synDescription(e))}"><button class="mini" type="button" data-syncopie="desc" data-id="${id}">Copier</button></div></li>
+    <li><span class="syn-champ">Bénéficiaire</span><div class="syn-val"><b>Moi même (demandeur)</b><span class="aide">laissez tel quel</span></div></li>
+    <li><span class="syn-champ">Sujet</span><div class="syn-val"><b>${esc(synSujet(s))}</b><span class="aide">à choisir dans la liste</span></div></li>
+    <li><span class="syn-champ">Commentaire</span>
+      <div class="syn-val"><textarea readonly rows="9">${esc(synCommentaire(e))}</textarea><button class="mini" type="button" data-syncopie="com" data-id="${id}">Copier</button></div></li>
+    <li><span class="syn-champ">Après « Ok »</span>
+      <div class="syn-val"><input type="text" id="synnum-${id}" placeholder="N° d'incident, ex. I261016_00012" value="${esc(s.ticket || "")}" maxlength="40" autocomplete="off"><button class="mini" type="button" data-synnum="${id}">Enregistrer</button></div>
+      <span class="aide">Le numéro apparaît dans la liste « Tous les Incidents ». Il sera noté dans votre journal.</span></li>
+  </ol>`;
+}
+function enregistrerTicket(id){
+  const e = etat.entrees.find(x => x.id === id); if(!e) return;
+  const champ = document.getElementById("synnum-" + id);
+  const n = String(champ ? champ.value : "").trim().toUpperCase().slice(0, 40);
+  if(!n){ toast("Collez d'abord le numéro d'incident Synchronista."); if(champ) champ.focus(); return; }
+  e.sig = {...e.sig, ticket: n};
+  const note = "Ticket Synchronista : " + n;
+  const rem = String(e.remarque || "").replace(/\s*·?\s*Ticket Synchronista : \S+/g, "");
+  e.remarque = (rem ? rem + " · " : "") + note;
+  if(e.statut === "À faire") e.statut = "En cours";
+  e.maj = Date.now(); sauver(); toutRedessiner();
+  toast("Numéro enregistré : la demande passe en cours.");
+}
+function carteDemande(e){
+  const s = e.sig, m = mis(e.mission);
+  const urgent = /urgent|bloquant/i.test(s.urgence || "");
+  const titre = [lieuDe(s), s.materiel || (s.type === "tablette" ? "Tablette" : m.court)].filter(Boolean).join(" · ") || m.court;
+  const recu = new Date(s.recu || e.date);
+  const meta = [`${s.nom}${s.fonction ? " (" + s.fonction + ")" : ""}`, `reçu le ${recu.toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long"})} à ${recu.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"})}`,
+    s.depuis && "depuis : " + s.depuis.toLowerCase(), s.tente && "déjà essayé : " + s.tente].filter(Boolean).map(esc).join(" · ")
+    + (s.dispo ? `<br><b>Disponibilités :</b> ${esc(s.dispo)}` : "");
+  const fini = e.statut === "Terminé";
+  return `<div class="demande${urgent && !fini ? " urgente" : ""}${fini ? " finie" : ""}">
+    <div class="barre" style="background:${m.c}"></div>
+    <div class="corps">
+      <div class="dm-tete"><b>${esc(titre)}</b>
+        ${s.urgence ? `<span class="badge ${urgent ? "urg" : ""}">${esc(s.urgence)}</span>` : ""}
+        <span class="badge ${fini ? "fait" : "encours"}">${esc(e.statut)}${fini && e.minutes ? " · " + fmtCourt(e.minutes) : ""}</span>
+        ${s.ticket ? `<span class="badge syn">Synchronista ${esc(s.ticket)}</span>` : ""}</div>
+      <p class="dm-desc">${esc(s.description)}</p>
+      <p class="m">${meta}</p>
+      <div class="actions">
+        ${fini ? "" : `<button class="btn" type="button" data-clore="${e.id}">C'est réglé : noter le temps</button>`}
+        ${!fini && e.statut !== "En cours" ? `<button class="btn sec" type="button" data-encours="${e.id}">Je m'en occupe</button>` : ""}
+        <button class="btn sec" type="button" data-ticket="${e.id}">${s.ticket ? "Revoir le ticket Synchronista" : "Préparer le ticket Synchronista"}</button>
+        <button class="mini" data-edit="${e.id}">Modifier</button><button class="mini rouge" data-suppr="${e.id}">Supprimer</button>
+      </div>
+      <div class="syn" id="ticket-${e.id}" hidden></div>
+    </div>
+  </div>`;
+}
+function dessinerDemandes(){
+  majPastille();
+  const el = $("#dm-liste"); if(!el) return;
+  $("#dm-config").hidden = !!etat.signal;
+  const toutes = etat.entrees.filter(e => e.sig).sort((a, b) => (b.sig.recu || b.date).localeCompare(a.sig.recu || a.date));
+  const ouvertes = toutes.filter(sigOuvert), finies = toutes.filter(e => !sigOuvert(e)).slice(0, 15);
+  $("#dm-total").textContent = etat.signal ? (ouvertes.length ? `${ouvertes.length} demande${ouvertes.length > 1 ? "s" : ""} à traiter.` : "Aucune demande en attente.") : "";
+  el.innerHTML = (ouvertes.length ? ouvertes.map(carteDemande).join("") : (etat.signal ? `<p class="vide">Les signalements de vos collègues arriveront ici, déjà notés dans votre journal en « À faire ».</p>` : ""))
+    + (finies.length ? `<h3 class="dm-sous">Réglées récemment</h3>` + finies.map(carteDemande).join("") : "");
+}
+function clore(id){
+  editer(id);
+  f.statut = "Terminé"; dessinerStatut();
+  $("#form-titre").textContent = "Clore le signalement : indiquez le temps passé";
+}
+document.addEventListener("click", ev => {
+  const b = ev.target.closest("button"); if(!b) return;
+  if(b.dataset.clore) clore(b.dataset.clore);
+  if(b.dataset.encours){ const e = etat.entrees.find(x => x.id === b.dataset.encours); if(e){ e.statut = "En cours"; e.maj = Date.now(); sauver(); toutRedessiner(); toast("Passé en cours."); } }
+  if(b.dataset.ticket){
+    const e = etat.entrees.find(x => x.id === b.dataset.ticket); if(!e) return;
+    const p = document.getElementById("ticket-" + e.id); if(!p) return;
+    if(!p.hidden){ p.hidden = true; return; }
+    p.innerHTML = panneauSyn(e); p.hidden = false;
+  }
+  if(b.dataset.syncopie){
+    const e = etat.entrees.find(x => x.id === b.dataset.id); if(!e) return;
+    copierTexte(b.dataset.syncopie === "desc" ? synDescription(e) : synCommentaire(e), b, "Copié");
+  }
+  if(b.dataset.synnum) enregistrerTicket(b.dataset.synnum);
+  if(b.dataset.ouvrir) ouvrir(b.dataset.ouvrir);
+});
+
+// ---- Générateur de QR code (mode octet, correction M, versions 1 à 10), © 2026 Drane d'Orléans-Tours, licence MIT ----
+    // ---- Générateur de QR code (mode octet, correction M, versions 1 à 10) ----
+    // Implémentation minimale de la norme ISO/IEC 18004, sans dépendance.
+    const QR_ECC_PAR_BLOC = [0, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26];
+    const QR_NB_BLOCS = [0, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5];
+
+    // Multiplication dans GF(2^8) (polynôme 0x11D)
+    function qrMul(x, y) {
+      let z = 0;
+      for (let i = 7; i >= 0; i--) {
+        z = (z << 1) ^ ((z >>> 7) * 0x11D);
+        z ^= ((y >>> i) & 1) * x;
+      }
+      return z;
+    }
+    // Polynôme générateur Reed-Solomon de degré donné
+    function qrDiviseur(degre) {
+      const r = new Array(degre).fill(0);
+      r[degre - 1] = 1;
+      let racine = 1;
+      for (let i = 0; i < degre; i++) {
+        for (let j = 0; j < r.length; j++) {
+          r[j] = qrMul(r[j], racine);
+          if (j + 1 < r.length) r[j] ^= r[j + 1];
+        }
+        racine = qrMul(racine, 0x02);
+      }
+      return r;
+    }
+    // Octets de correction d'erreur d'un bloc
+    function qrReste(donnees, div) {
+      const r = div.map(() => 0);
+      for (const b of donnees) {
+        const f = b ^ r.shift();
+        r.push(0);
+        div.forEach((c, i) => { r[i] ^= qrMul(c, f); });
+      }
+      return r;
+    }
+    // Nombre de modules disponibles pour les données + correction
+    function qrModulesBruts(v) {
+      let n = (16 * v + 128) * v + 64;
+      if (v >= 2) {
+        const na = Math.floor(v / 7) + 2;
+        n -= (25 * na - 10) * na - 55;
+        if (v >= 7) n -= 36;
+      }
+      return n;
+    }
+    // Positions des motifs d'alignement
+    function qrAlignement(v) {
+      if (v === 1) return [];
+      const na = Math.floor(v / 7) + 2;
+      const pas = Math.ceil((v * 4 + 4) / (na * 2 - 2)) * 2;
+      const res = [6];
+      for (let p = v * 4 + 10; res.length < na; p -= pas) res.splice(1, 0, p);
+      return res;
+    }
+
+    // Renvoie la matrice de modules (true = noir), ou null si le texte est trop long
+    function genererQR(texte) {
+      const octets = Array.from(new TextEncoder().encode(texte));
+
+      // 1) Plus petite version pouvant contenir les données
+      let v, capacite;
+      for (v = 1; v <= 10; v++) {
+        capacite = Math.floor(qrModulesBruts(v) / 8) - QR_ECC_PAR_BLOC[v] * QR_NB_BLOCS[v];
+        if (4 + (v < 10 ? 8 : 16) + octets.length * 8 <= capacite * 8) break;
+      }
+      if (v > 10) return null;
+
+      // 2) Flux de bits : mode octet, longueur, données, terminateur, bourrage
+      const bits = [];
+      const ajoute = (val, n) => { for (let i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); };
+      ajoute(4, 4);
+      ajoute(octets.length, v < 10 ? 8 : 16);
+      octets.forEach(b => ajoute(b, 8));
+      ajoute(0, Math.min(4, capacite * 8 - bits.length));
+      ajoute(0, (8 - bits.length % 8) % 8);
+      for (let pad = 0xEC; bits.length < capacite * 8; pad ^= 0xEC ^ 0x11) ajoute(pad, 8);
+      const donnees = [];
+      for (let i = 0; i < bits.length; i += 8) donnees.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+
+      // 3) Blocs + correction Reed-Solomon, puis entrelacement
+      const nbBlocs = QR_NB_BLOCS[v], eccLen = QR_ECC_PAR_BLOC[v];
+      const brut = Math.floor(qrModulesBruts(v) / 8);
+      const nbCourts = nbBlocs - brut % nbBlocs;
+      const lgCourt = Math.floor(brut / nbBlocs);
+      const div = qrDiviseur(eccLen);
+      const blocs = [];
+      for (let i = 0, k = 0; i < nbBlocs; i++) {
+        const d = donnees.slice(k, k + lgCourt - eccLen + (i < nbCourts ? 0 : 1));
+        k += d.length;
+        const ecc = qrReste(d, div);
+        if (i < nbCourts) d.push(0);
+        blocs.push(d.concat(ecc));
+      }
+      const final = [];
+      for (let i = 0; i < blocs[0].length; i++) {
+        blocs.forEach((b, j) => { if (i !== lgCourt - eccLen || j >= nbCourts) final.push(b[i]); });
+      }
+
+      // 4) Motifs fixes (repérage, synchronisation, alignement, format, version)
+      const n = v * 4 + 17;
+      const mat = Array.from({ length: n }, () => new Array(n).fill(false));
+      const fonc = Array.from({ length: n }, () => new Array(n).fill(false));
+      const pose = (x, y, noir) => { mat[y][x] = noir; fonc[y][x] = true; };
+      for (let i = 0; i < n; i++) { pose(6, i, i % 2 === 0); pose(i, 6, i % 2 === 0); }
+      [[3, 3], [n - 4, 3], [3, n - 4]].forEach(([cx, cy]) => {
+        for (let dy = -4; dy <= 4; dy++) {
+          for (let dx = -4; dx <= 4; dx++) {
+            const d = Math.max(Math.abs(dx), Math.abs(dy)), x = cx + dx, y = cy + dy;
+            if (x >= 0 && x < n && y >= 0 && y < n) pose(x, y, d !== 2 && d !== 4);
+          }
+        }
+      });
+      const al = qrAlignement(v), der = al.length - 1;
+      al.forEach((ay, i) => al.forEach((ax, j) => {
+        if ((i === 0 && j === 0) || (i === 0 && j === der) || (i === der && j === 0)) return;
+        for (let dy = -2; dy <= 2; dy++) {
+          for (let dx = -2; dx <= 2; dx++) pose(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+        }
+      }));
+      const poseFormat = masque => {
+        const data = masque; // niveau de correction M = 00
+        let r = data;
+        for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+        const b = ((data << 10) | r) ^ 0x5412;
+        const bit = i => ((b >>> i) & 1) === 1;
+        for (let i = 0; i <= 5; i++) pose(8, i, bit(i));
+        pose(8, 7, bit(6)); pose(8, 8, bit(7)); pose(7, 8, bit(8));
+        for (let i = 9; i < 15; i++) pose(14 - i, 8, bit(i));
+        for (let i = 0; i < 8; i++) pose(n - 1 - i, 8, bit(i));
+        for (let i = 8; i < 15; i++) pose(8, n - 15 + i, bit(i));
+        pose(8, n - 8, true);
+      };
+      poseFormat(0); // réserve les zones de format
+      if (v >= 7) {
+        let r = v;
+        for (let i = 0; i < 12; i++) r = (r << 1) ^ ((r >>> 11) * 0x1F25);
+        const b = (v << 12) | r;
+        for (let i = 0; i < 18; i++) {
+          const noir = ((b >>> i) & 1) === 1, a = n - 11 + i % 3, c = Math.floor(i / 3);
+          pose(a, c, noir); pose(c, a, noir);
+        }
+      }
+
+      // 5) Placement des octets en zigzag
+      let idx = 0;
+      for (let droite = n - 1; droite >= 1; droite -= 2) {
+        if (droite === 6) droite = 5;
+        for (let vert = 0; vert < n; vert++) {
+          for (let j = 0; j < 2; j++) {
+            const x = droite - j, montant = ((droite + 1) & 2) === 0;
+            const y = montant ? n - 1 - vert : vert;
+            if (!fonc[y][x] && idx < final.length * 8) {
+              mat[y][x] = ((final[idx >>> 3] >>> (7 - (idx & 7))) & 1) === 1;
+              idx++;
+            }
+          }
+        }
+      }
+
+      // 6) Choix du masque (pénalité simplifiée : séries, blocs 2x2, équilibre noir/blanc)
+      const MASQUES = [
+        (x, y) => (x + y) % 2 === 0,
+        (x, y) => y % 2 === 0,
+        (x, y) => x % 3 === 0,
+        (x, y) => (x + y) % 3 === 0,
+        (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0,
+        (x, y) => x * y % 2 + x * y % 3 === 0,
+        (x, y) => (x * y % 2 + x * y % 3) % 2 === 0,
+        (x, y) => ((x + y) % 2 + x * y % 3) % 2 === 0
+      ];
+      const appliqueMasque = m => {
+        for (let y = 0; y < n; y++) {
+          for (let x = 0; x < n; x++) if (!fonc[y][x] && MASQUES[m](x, y)) mat[y][x] = !mat[y][x];
+        }
+      };
+      const penalite = () => {
+        let p = 0, noirs = 0;
+        for (let a = 0; a < n; a++) {
+          for (const colonne of [false, true]) {
+            let serie = 0, prec = null;
+            for (let b = 0; b < n; b++) {
+              const c = colonne ? mat[b][a] : mat[a][b];
+              if (c === prec) { serie++; if (serie === 5) p += 3; else if (serie > 5) p++; }
+              else { serie = 1; prec = c; }
+            }
+          }
+          for (let b = 0; b < n; b++) {
+            if (mat[a][b]) noirs++;
+            if (a < n - 1 && b < n - 1) {
+              const c = mat[a][b];
+              if (c === mat[a][b + 1] && c === mat[a + 1][b] && c === mat[a + 1][b + 1]) p += 3;
+            }
+          }
+        }
+        return p + Math.floor(Math.abs(noirs * 20 - n * n * 10) / (n * n)) * 10;
+      };
+      let meilleur = 0, min = Infinity;
+      for (let m = 0; m < 8; m++) {
+        appliqueMasque(m);
+        poseFormat(m);
+        const p = penalite();
+        if (p < min) { min = p; meilleur = m; }
+        appliqueMasque(m); // annule le masque
+      }
+      appliqueMasque(meilleur);
+      poseFormat(meilleur);
+      return mat;
+    }
+
+    // Dessine le QR code (avec sa marge blanche) dans un canvas
+    function dessinerQR(canvas, texte) {
+      const mat = genererQR(texte);
+      if (!mat) return false;
+      const marge = 4, taille = mat.length + marge * 2;
+      const echelle = Math.max(4, Math.floor(320 / taille));
+      canvas.width = canvas.height = taille * echelle;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#000000';
+      mat.forEach((ligne, y) => ligne.forEach((noir, x) => {
+        if (noir) ctx.fillRect((x + marge) * echelle, (y + marge) * echelle, echelle, echelle);
+      }));
+      return true;
+    }
+
+
+
 /* ---------------- Onglets ---------------- */
 function ouvrir(id){
   document.querySelectorAll("nav.onglets button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.onglet === id)));
@@ -1060,6 +1760,7 @@ document.querySelectorAll("nav.onglets button").forEach(b => b.onclick = () => o
 
 function toutRedessiner(){
   dessinerEntete(); dessinerDernieres(); remplirFiltres(); dessinerJournal(); dessinerSynthese(); dessinerTachesPerso(); remplirPrecisions(); majStockage();
+  dessinerDemandes(); if(typeof majSigEtat === "function") majSigEtat();
   if(f.mission && !f.edition){ const v = $("#f-tache").value; remplirTaches(); if([...$("#f-tache").options].some(o => o.value === v)) $("#f-tache").value = v; $("#nouvelle-tache").hidden = $("#f-tache").value !== "__autre"; }
 }
 
@@ -1068,6 +1769,11 @@ if(syncActive()) synchroniser();
 if(premiereFois) setTimeout(() => toast(`${etat.entrees.length} interventions déjà chargées depuis votre tableau.`), 300);
 else if(majSeed) setTimeout(() => toast(`${majSeed} interventions ajoutées à votre journal.`), 300);
 try{ const o = sessionStorage.getItem("rupn-onglet"); if(o) ouvrir(o); }catch(e){}
+if(location.hash === "#demandes") ouvrir("demandes");
+demarrerSignalements();
+// Après une synchronisation, la clé des signalements peut venir d'un autre appareil
+const _synchroniser = synchroniser;
+synchroniser = async function(){ const avant = etat.signal && etat.signal.pub; await _synchroniser(); if((etat.signal && etat.signal.pub) !== avant) demarrerSignalements(); };
 </script>
 </body>
 </html>

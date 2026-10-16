@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Signaler un problème numérique</title>
+<meta name="description" content="Signaler un problème informatique ou numérique au référent numérique du collège Marcel Pagnol.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* Même cahier que l'application de suivi : en-tête Seyès, encre bleue, marge rouge */
+:root{
+  --encre:#1D3A8A; --encre-2:#2F55C4; --marge:#D64545; --papier:#FBFCFE; --carreau:#D7DEF2;
+  --texte:#1B2233; --doux:#5B6478; --fond:#EEF1F8; --ligne:#D5DAE6; --carte:#FFFFFF;
+  --ok:#1F7A4D; --attention:#B45309; --focus:#F5B700;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --encre:#9DB4FF; --encre-2:#BCCBFF; --marge:#FF8A8A; --papier:#161B26; --carreau:#25304A;
+    --texte:#E8ECF5; --doux:#A3ACC0; --fond:#0F131B; --ligne:#2C3448; --carte:#1A2030;
+    --ok:#5BD69A; --attention:#F5A65B;
+  }
+}
+:root[data-theme="dark"]{
+  --encre:#9DB4FF; --encre-2:#BCCBFF; --marge:#FF8A8A; --papier:#161B26; --carreau:#25304A;
+  --texte:#E8ECF5; --doux:#A3ACC0; --fond:#0F131B; --ligne:#2C3448; --carte:#1A2030;
+  --ok:#5BD69A; --attention:#F5A65B;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--fond);color:var(--texte);font:16px/1.5 "Atkinson Hyperlegible",system-ui,sans-serif;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+header.cahier{
+  background-color:var(--papier);
+  background-image:
+    linear-gradient(90deg, transparent 0 46px, var(--marge) 46px 48px, transparent 48px),
+    repeating-linear-gradient(0deg, var(--carreau) 0 1px, transparent 1px 8px),
+    repeating-linear-gradient(90deg, var(--carreau) 0 1px, transparent 1px 32px);
+  border-bottom:1px solid var(--ligne);
+  padding:20px max(16px, env(safe-area-inset-right,0px)) 16px max(64px, calc(48px + env(safe-area-inset-left,0px)));
+}
+.cahier h1{margin:0;font-size:1.5rem;line-height:1.2;color:var(--encre)}
+.cahier p{margin:4px 0 0;color:var(--doux);font-size:.95rem}
+main{max-width:720px;margin:0 auto;padding:16px max(16px, env(safe-area-inset-right,0px)) 40px max(16px, env(safe-area-inset-left,0px))}
+.bloc{background:var(--carte);border:1px solid var(--ligne);border-radius:10px;padding:16px;margin-bottom:14px}
+.bloc h2{margin:0 0 10px;font-size:1.1rem;color:var(--encre)}
+.etape{margin:0 0 16px}
+.etape > label,.etape > .titre{display:block;font-weight:700;margin-bottom:6px}
+.aide{color:var(--doux);font-size:.88rem;margin:4px 0 0}
+.facultatif{font-weight:400;color:var(--doux);font-size:.88rem}
+input[type=text],select,textarea{width:100%;border:1.5px solid var(--ligne);background:var(--papier);border-radius:8px;padding:9px 11px;min-height:44px}
+textarea{min-height:110px;resize:vertical}
+.ligne2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.types{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.type{text-align:left;border:1.5px solid var(--ligne);background:var(--carte);border-radius:8px;padding:10px 12px;cursor:pointer;min-height:52px;font-weight:700}
+.type small{display:block;font-weight:400;color:var(--doux);font-size:.82rem}
+.type{display:flex;flex-direction:column;gap:2px}
+.t-tete{display:flex;align-items:center;gap:8px}
+.t-tete i{width:12px;height:12px;border-radius:3px;flex:none}
+.type[aria-pressed="true"]{border-color:var(--mc);box-shadow:inset 0 0 0 2px var(--mc);background:color-mix(in srgb,var(--mc) 10%,var(--carte))}
+.bandeau{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px;font-size:.88rem;color:var(--doux)}
+.bandeau span{display:inline-flex;align-items:center;gap:6px}
+.bandeau span::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.puces{display:flex;flex-wrap:wrap;gap:8px}
+.puce{border:1.5px solid var(--ligne);background:var(--carte);border-radius:999px;padding:7px 14px;cursor:pointer;min-height:40px}
+.puce[aria-pressed="true"]{background:var(--encre);border-color:var(--encre);color:var(--papier)}
+.etape > label.case-urgent,.case-urgent{display:flex;gap:12px;align-items:center;cursor:pointer;border:1.5px solid var(--ligne);border-radius:8px;padding:12px 14px;background:var(--carte);font-weight:400;margin:0}
+.case-urgent input{width:22px;height:22px;margin:1px 0 0;accent-color:var(--marge);flex:none}
+.case-urgent b{display:block}
+.case-urgent small{color:var(--doux);font-size:.88rem;font-weight:400}
+.case-urgent:has(input:checked){border-color:var(--marge);box-shadow:inset 0 0 0 1.5px var(--marge);background:color-mix(in srgb,var(--marge) 8%,var(--carte))}
+.btn{border:0;border-radius:8px;padding:12px 20px;font-weight:700;cursor:pointer;min-height:48px;background:var(--encre);color:var(--papier);font-size:1.05rem}
+.btn.sec{background:transparent;color:var(--encre);border:1.5px solid var(--encre);font-size:1rem}
+.btn:disabled{opacity:.5;cursor:wait}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.erreur{color:var(--marge);font-weight:700}
+.merci{border-left:4px solid var(--ok)}
+.merci h2{color:var(--ok)}
+.recap{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:.95rem}
+.recap b{color:var(--doux);font-weight:700}
+pre.texte{white-space:pre-wrap;background:var(--papier);border:1px solid var(--ligne);border-radius:8px;padding:10px;font:inherit;font-size:.92rem;margin:10px 0}
+@media (max-width:560px){ .ligne2{grid-template-columns:1fr} .cahier h1{font-size:1.25rem} }
+</style>
+</head>
+<body>
+<header class="cahier">
+  <h1>Signaler un problème numérique</h1>
+  <p>Collège Marcel Pagnol · votre demande arrive directement chez Fathey Zeghoudi, référent numérique.</p>
+  <div class="bandeau"><span>Une minute pour remplir</span><span>Prévenu aussitôt</span><span>Chiffré : lu par le référent seul</span></div>
+</header>
+
+<main>
+  <p class="bloc erreur" id="lien-ko" hidden>Ce lien est incomplet. Utilisez le lien ou le QR code fourni par le référent numérique.</p>
+
+  <form class="bloc" id="form" autocomplete="on" novalidate>
+    <h2>Votre demande</h2>
+
+    <div class="etape ligne2">
+      <div>
+        <label for="nom">Votre nom</label>
+        <input type="text" id="nom" autocomplete="name" placeholder="Mme Dupont" maxlength="60" required>
+      </div>
+      <div>
+        <label for="fonction">Vous êtes</label>
+        <select id="fonction">
+          <option value="Professeur">Professeur</option>
+          <option value="Direction">Direction</option>
+          <option value="CPE">CPE</option>
+          <option value="AED / vie scolaire">AED, vie scolaire</option>
+          <option value="Documentaliste">Professeur documentaliste (CDI)</option>
+          <option value="Secrétariat / gestion">Secrétariat, gestion</option>
+          <option value="Autre personnel">Autre personnel</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="etape">
+      <span class="titre">Le problème concerne</span>
+      <div class="types" id="types" role="group" aria-label="Type de problème"></div>
+    </div>
+
+    <div class="etape ligne2">
+      <div>
+        <label for="salle">Salle ou lieu</label>
+        <input type="text" id="salle" placeholder="Salle 214, CDI, salle des profs…" maxlength="40">
+      </div>
+      <div>
+        <label for="materiel">Matériel concerné <span class="facultatif">(facultatif)</span></label>
+        <input type="text" id="materiel" placeholder="Vidéoprojecteur, PC du bureau…" maxlength="60">
+      </div>
+    </div>
+
+    <div class="etape">
+      <label for="description">Que se passe-t-il ?</label>
+      <textarea id="description" maxlength="1200" placeholder="Décrivez ce que vous voyez : message d'erreur, ce qui ne marche pas, ce qui marchait avant…" required></textarea>
+    </div>
+
+    <div class="etape">
+      <span class="titre">Depuis quand le problème apparaît-il ?</span>
+      <div class="puces" id="depuis" role="group" aria-label="Depuis quand le problème apparaît-il"></div>
+    </div>
+
+    <div class="etape">
+      <label class="case-urgent" for="urgent"><input type="checkbox" id="urgent"><span><b>C'est urgent</b></span></label>
+    </div>
+
+    <div class="etape">
+      <label for="dispo">Vos disponibilités</label>
+      <input type="text" id="dispo" placeholder="Lundi en M3, mardi midi, jeudi après 15 h…" maxlength="120" required>
+    </div>
+
+    <div class="etape">
+      <label for="tente">Ce que vous avez déjà essayé <span class="facultatif">(facultatif)</span></label>
+      <input type="text" id="tente" placeholder="Redémarré le PC, changé de câble…" maxlength="200">
+    </div>
+
+    <p class="erreur" id="erreur" role="alert"></p>
+    <div class="actions">
+      <button class="btn" type="submit" id="envoyer">Envoyer le signalement</button>
+    </div>
+    <p class="aide">Votre signalement est chiffré : seul le référent numérique peut le lire. N'indiquez pas de mot de passe.</p>
+  </form>
+
+  <section class="bloc merci" id="merci" hidden>
+    <h2>Signalement envoyé</h2>
+    <p>Fathey Zeghoudi l'a reçu. Il reviendra vers vous.</p>
+    <ul class="recap" id="recap"></ul>
+    <div class="actions" style="margin-top:14px">
+      <button class="btn sec" type="button" id="encore">Signaler un autre problème</button>
+    </div>
+  </section>
+
+  <section class="bloc" id="echec" hidden>
+    <h2 class="erreur">L'envoi n'a pas fonctionné</h2>
+    <p>Le réseau a peut-être bloqué l'envoi. Copiez ce texte et envoyez-le à Fathey Zeghoudi par la messagerie de l'ENT, ou réessayez.</p>
+    <pre class="texte" id="texte-secours"></pre>
+    <div class="actions">
+      <button class="btn" type="button" id="copier">Copier le texte</button>
+      <button class="btn sec" type="button" id="reessayer">Réessayer l'envoi</button>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const RELAIS = "https://ntfy.sh/";
+// l'application de suivi, à côté de cette page (adresse de secours si la page est ouverte hors ligne ou en aperçu)
+const SUIVI = (() => { try{ return new URL("./", location.href).href; }catch(e){ return "https://fatheyze.github.io/suivi-numerique/"; } })();
+const TYPES = [
+  {v:"materiel", l:"Matériel", d:"Ordinateur, vidéoprojecteur, son, imprimante", m:"Matériel & maintenance", c:"#7A8699"},
+  {v:"reseau", l:"Internet et réseau", d:"Wi-Fi, connexion, codes réseau", m:"Réseau pédagogique & licences", c:"#2F6FDE"},
+  {v:"ent", l:"ENT et comptes", d:"ENT, PRONOTE, identifiants", m:"ENT (NEO) & comptes", c:"#0E9F8E"},
+  {v:"gar", l:"Ressources numériques", d:"Manuels numériques, GAR", m:"GAR & ressources numériques", c:"#8B5CF6"},
+  {v:"pix", l:"Pix", d:"Comptes, campagnes, certification", m:"Pix", c:"#E0499B"},
+  {v:"ecrans", l:"Écrans d'affichage", d:"Écrans dynamiques du collège", m:"Écrans dynamiques", c:"#F08C00"},
+  {v:"site", l:"Site internet", d:"Site du collège", m:"Site internet & communication", c:"#5C7CFA"},
+  {v:"autre", l:"Autre", d:"Ou je ne sais pas", m:"Assistance & dépannage", c:"#D6453D"}
+];
+const DEMANDEUR = {"Professeur":"Collègue", "Direction":"Direction", "CPE":"Vie scolaire (CPE)", "AED / vie scolaire":"Vie scolaire (CPE)",
+  "Documentaliste":"CDI", "Secrétariat / gestion":"Secrétariat / gestion", "Autre personnel":"Collègue"};
+
+const $ = s => document.querySelector(s);
+const DEPUIS = ["Aujourd'hui", "Quelques jours", "Plus d'une semaine"];
+const choix = {type:null, depuis:null};
+const lire = k => { try{ return localStorage.getItem(k) || ""; }catch(e){ return ""; } };
+const ecrire = (k, v) => { try{ localStorage.setItem(k, v); }catch(e){} };
+
+// ---- Clé publique du référent, transmise dans le lien (#…) ----
+const b64url = u8 => { let s = ""; u8.forEach(b => s += String.fromCharCode(b)); return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,""); };
+const deB64url = s => Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+const CLE_PUB = (location.hash.slice(1).match(/^[A-Za-z0-9_-]{80,100}$/) || [""])[0] || lire("signaler-cle");
+if(CLE_PUB) ecrire("signaler-cle", CLE_PUB);
+async function hex(s, n){ const h = new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s))); return [...h.slice(0, n)].map(b => b.toString(16).padStart(2,"0")).join(""); }
+async function canaux(){ return { donnees: "rupnsig_" + await hex("donnees|" + CLE_PUB, 12), alerte: "rupnalerte_" + await hex("alerte|" + CLE_PUB, 12) }; }
+
+// Chiffrement : clé éphémère ECDH P-256 + AES-GCM. Seule la clé privée du référent peut déchiffrer.
+async function chiffrer(obj){
+  const pub = await crypto.subtle.importKey("raw", deB64url(CLE_PUB), {name:"ECDH", namedCurve:"P-256"}, false, []);
+  const eph = await crypto.subtle.generateKey({name:"ECDH", namedCurve:"P-256"}, true, ["deriveKey"]);
+  const cle = await crypto.subtle.deriveKey({name:"ECDH", public:pub}, eph.privateKey, {name:"AES-GCM", length:256}, false, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = new Uint8Array(await crypto.subtle.encrypt({name:"AES-GCM", iv}, cle, new TextEncoder().encode(JSON.stringify(obj))));
+  const ephRaw = new Uint8Array(await crypto.subtle.exportKey("raw", eph.publicKey));
+  return "S1." + b64url(ephRaw) + "." + b64url(iv) + "." + b64url(ct);
+}
+
+// ---- Formulaire ----
+function puces(sel, valeurs, cle, classe){
+  const el = $(sel); el.innerHTML = "";
+  valeurs.forEach(v => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "puce" + (classe && v === valeurs[0] ? " " + classe : "");
+    b.textContent = v; b.setAttribute("aria-pressed", String(choix[cle] === v));
+    b.onclick = () => { choix[cle] = choix[cle] === v ? null : v; puces(sel, valeurs, cle, classe); };
+    el.appendChild(b);
+  });
+}
+function dessinerTypes(){
+  const el = $("#types"); el.innerHTML = "";
+  TYPES.forEach(t => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "type";
+    b.innerHTML = `<span class="t-tete"><i style="background:${t.c}"></i>${t.l}</span><small>${t.d}</small>`; b.style.setProperty("--mc", t.c); b.setAttribute("aria-pressed", String(choix.type === t.v));
+    b.onclick = () => { choix.type = t.v; dessinerTypes(); };
+    el.appendChild(b);
+  });
+}
+function initialiser(){
+  choix.type = null; choix.depuis = null;
+  ["#salle","#materiel","#description","#tente","#dispo"].forEach(s => $(s).value = "");
+  $("#nom").value = lire("signaler-nom"); if(lire("signaler-fonction")) $("#fonction").value = lire("signaler-fonction");
+  dessinerTypes(); puces("#depuis", DEPUIS, "depuis"); $("#urgent").checked = false;
+  $("#erreur").textContent = "";
+}
+
+let dernier = null;
+function texteLisible(s){
+  const t = TYPES.find(x => x.v === s.type);
+  return [`Signalement pour le référent numérique (${new Date(s.date).toLocaleString("fr-FR")})`,
+    `De : ${s.nom} (${s.fonction})`, `Type : ${t ? t.l : s.type}`, `Salle ou lieu : ${s.salle || "non précisé"}`,
+    s.materiel ? `Matériel : ${s.materiel}` : "", `Problème : ${s.description}`,
+    s.depuis ? `Depuis : ${s.depuis.toLowerCase()}` : "", s.urgence ? "URGENT" : "", s.tente ? `Déjà essayé : ${s.tente}` : "", s.dispo ? `Disponibilités : ${s.dispo}` : ""].filter(Boolean).join("\n");
+}
+async function envoyer(s){
+  const btn = $("#envoyer"); btn.disabled = true; btn.textContent = "Envoi…";
+  try{
+    const c = await canaux();
+    const corps = await chiffrer(s);
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 12000);
+    const r = await fetch(RELAIS + c.donnees, {method:"POST", body:corps, signal:ctl.signal, headers:{"Content-Type":"text/plain"}});
+    clearTimeout(t);
+    if(!r.ok) throw new Error("relais " + r.status);
+    // Alerte sur le téléphone du référent : un résumé sans nom ni description
+    const t2 = TYPES.find(x => x.v === s.type);
+    const urgent = s.urgence === "Urgent";
+    const titre = `Signalement : ${t2 ? t2.l : "autre"}${s.salle ? " · " + s.salle : ""}`;
+    const params = new URLSearchParams({title: titre, priority: urgent ? "4" : "3", tags: urgent ? "rotating_light" : "wrench", click: SUIVI + "#demandes"});
+    fetch(RELAIS + c.alerte + "?" + params, {method:"POST", body:`${urgent ? "URGENT. " : ""}Ouvrez votre suivi pour le détail.`, headers:{"Content-Type":"text/plain"}}).catch(() => {});
+    $("#form").hidden = true; $("#echec").hidden = true; $("#merci").hidden = false;
+    const rec = $("#recap"); rec.innerHTML = "";
+    [["Type", t2 ? t2.l : ""], ["Salle", s.salle], ["Matériel", s.materiel], ["Urgence", s.urgence], ["Disponibilités", s.dispo]].filter(x => x[1]).forEach(([k, v]) => {
+      const li = document.createElement("li"); li.innerHTML = `<span><b>${k} :</b> </span>`; li.append(v); rec.appendChild(li);
+    });
+    window.scrollTo({top:0});
+  }catch(e){
+    $("#texte-secours").textContent = texteLisible(s);
+    $("#echec").hidden = false; $("#echec").scrollIntoView({behavior:"smooth"});
+  }finally{
+    btn.disabled = false; btn.textContent = "Envoyer le signalement";
+  }
+}
+$("#form").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const err = $("#erreur");
+  const nom = $("#nom").value.trim(), description = $("#description").value.trim();
+  if(!nom) { err.textContent = "Indiquez votre nom."; $("#nom").focus(); return; }
+  if(!choix.type) { err.textContent = "Choisissez ce que concerne le problème."; return; }
+  if(!description) { err.textContent = "Décrivez le problème en quelques mots."; $("#description").focus(); return; }
+  if(!$("#dispo").value.trim()) { err.textContent = "Indiquez vos disponibilités."; $("#dispo").focus(); return; }
+  err.textContent = "";
+  ecrire("signaler-nom", nom); ecrire("signaler-fonction", $("#fonction").value);
+  const t = TYPES.find(x => x.v === choix.type);
+  dernier = {v:1, date:new Date().toISOString(), nom, fonction:$("#fonction").value, demandeur:DEMANDEUR[$("#fonction").value] || "Collègue",
+    type:t.v, mission:t.m, salle:$("#salle").value.trim(), materiel:$("#materiel").value.trim(), description,
+    depuis:choix.depuis || "", urgence:$("#urgent").checked ? "Urgent" : "", tente:$("#tente").value.trim(), dispo:$("#dispo").value.trim()};
+  envoyer(dernier);
+});
+$("#reessayer").onclick = () => { if(dernier) envoyer(dernier); };
+$("#encore").onclick = () => { initialiser(); $("#merci").hidden = true; $("#form").hidden = false; window.scrollTo({top:0}); };
+$("#copier").onclick = async () => {
+  const t = $("#texte-secours").textContent;
+  try{ await navigator.clipboard.writeText(t); $("#copier").textContent = "Texte copié"; }
+  catch(e){ const r = document.createRange(); r.selectNodeContents($("#texte-secours")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+};
+
+initialiser();
+if(!CLE_PUB || !window.crypto || !crypto.subtle){ $("#lien-ko").hidden = false; $("#form").hidden = true; }
+</script>
+</body>
+</html>
