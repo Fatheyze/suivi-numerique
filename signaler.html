@@ -117,18 +117,10 @@ header.cahier::after{content:"";position:absolute;inset:0;background:url("data:i
   <form class="bloc" id="form" autocomplete="on" novalidate>
     <h2>Votre demande</h2>
 
-    <div class="etape ligne2">
-      <div>
-        <label for="nom">Votre nom</label>
-        <input type="text" id="nom" autocomplete="name" placeholder="Mme Dupont" maxlength="60" required>
-      </div>
-      <div>
-        <label for="fonction">Vous êtes</label>
-        <select id="fonction">
-          <option value="Professeur">Professeur</option>
-          <option value="Documentaliste">Professeur documentaliste (CDI)</option>
-        </select>
-      </div>
+    <div class="etape">
+      <label for="nom">Votre nom</label>
+      <input type="text" id="nom" autocomplete="name" placeholder="Mme Dupont" maxlength="60" required>
+      <input type="hidden" id="fonction" value="Professeur·e">
     </div>
 
     <div class="etape">
@@ -278,8 +270,7 @@ function dessinerTypes(){
 function initialiser(){
   choix.type = null; choix.depuis = null;
   ["#salle","#materiel","#description","#tente","#dispo"].forEach(s => $(s).value = "");
-  $("#nom").value = lire("signaler-nom"); if(lire("signaler-fonction")) $("#fonction").value = lire("signaler-fonction");
-  if(!$("#fonction").value) $("#fonction").selectedIndex = 0;
+  $("#nom").value = lire("signaler-nom");
   dessinerTypes(); puces("#depuis", DEPUIS, "depuis"); $("#urgent").checked = false;
   $("#erreur").textContent = "";
 }
@@ -329,7 +320,7 @@ $("#form").addEventListener("submit", ev => {
   if(!description) { err.textContent = "Décrivez le problème en quelques mots."; $("#description").focus(); return; }
   if(!$("#dispo").value.trim()) { err.textContent = "Indiquez vos disponibilités."; $("#dispo").focus(); return; }
   err.textContent = "";
-  ecrire("signaler-nom", nom); ecrire("signaler-fonction", $("#fonction").value);
+  ecrire("signaler-nom", nom);
   const t = TYPES.find(x => x.v === choix.type);
   dernier = {v:1, date:new Date().toISOString(), nom, fonction:$("#fonction").value, demandeur:DEMANDEUR[$("#fonction").value] || "Collègue",
     type:t.v, mission:t.m, salle:$("#salle").value.trim(), materiel:$("#materiel").value.trim(), description,
