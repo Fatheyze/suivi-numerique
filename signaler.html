@@ -63,7 +63,11 @@ textarea{min-height:110px;resize:vertical}
 .type{display:flex;flex-direction:column;gap:2px}
 .bulle{position:relative;grid-row:span 2;align-self:start;margin:0 0 0 10px;padding:10px 14px;border-radius:14px;background:var(--mc);color:#fff;font-size:.88rem;line-height:1.4}
 .bulle::before{content:"";position:absolute;left:-8px;top:22px;border:8px solid transparent;border-left:0;border-right-color:var(--mc)}
-@media (max-width:560px){ .bulle{margin:6px 0 0} .bulle::before{left:24px;top:-8px;border:8px solid transparent;border-top:0;border-bottom-color:var(--mc)} }
+.bulle.bas{grid-column:1/-1;grid-row:auto}
+@media (max-width:560px){ .bulle{margin:6px 0 0} }
+.bulle.bas{margin:6px 0 0}
+.bulle.bas::before{left:24px;top:-8px;border:8px solid transparent;border-top:0;border-bottom-color:var(--mc)}
+@media (max-width:560px){ .bulle::before{left:24px;top:-8px;border:8px solid transparent;border-top:0;border-bottom-color:var(--mc)} }
 .t-tete{display:flex;align-items:center;gap:8px}
 .t-tete i{width:12px;height:12px;border-radius:3px;flex:none}
 .type[aria-pressed="true"]{border-color:var(--mc);box-shadow:inset 0 0 0 2px var(--mc);background:color-mix(in srgb,var(--mc) 10%,var(--carte))}
@@ -135,7 +139,8 @@ header.cahier::after{content:"";position:absolute;inset:0;background:url("data:i
 
     <div class="etape">
       <span class="titre">Le problème concerne</span>
-      <div class="types" id="types" role="group" aria-label="Type de problème"></div>    </div>
+      <div class="types" id="types" role="group" aria-label="Type de problème"></div>
+      <p class="aide" id="note-profil" hidden>Le référent numérique gère la partie pédagogique. Les problèmes de matériel, de réseau ou de logiciels administratifs ne sont pas traités ici.</p>    </div>
 
     <div class="etape ligne2">
       <div>
@@ -221,6 +226,10 @@ const AVIS = {
   reseau: CODES,
   pix: "Pix s'ouvre depuis le Médiacentre de l'ENT. " + PASSAGE
 };
+// Enseignants : tous les types. Autres personnels : seulement ce que gère le référent pour eux.
+const PROFS = ["Professeur", "Documentaliste"];
+const TYPES_ADMIN = ["ent", "ecrans", "site"];
+const typesVisibles = () => PROFS.includes($("#fonction").value) ? TYPES : TYPES.filter(t => TYPES_ADMIN.includes(t.v));
 const DEMANDEUR = {"Professeur":"Collègue", "Direction":"Direction", "CPE":"Vie scolaire (CPE)", "AED / vie scolaire":"Vie scolaire (CPE)",
   "Documentaliste":"CDI", "Secrétariat / gestion":"Secrétariat / gestion", "Autre personnel":"Collègue"};
 
@@ -263,7 +272,10 @@ function puces(sel, valeurs, cle, classe){
 }
 function dessinerTypes(){
   const el = $("#types"); el.innerHTML = "";
-  TYPES.forEach(t => {
+  const visibles = typesVisibles();
+  if(!visibles.some(t => t.v === choix.type)) choix.type = null;
+  $("#note-profil").hidden = visibles === TYPES;
+  visibles.forEach(t => {
     const b = document.createElement("button"); b.type = "button"; b.className = "type";
     b.innerHTML = `<span class="t-tete"><i style="background:${t.c}"></i>${t.l}</span><small>${t.d}</small>`; b.style.setProperty("--mc", t.c); b.setAttribute("aria-pressed", String(choix.type === t.v));
     b.onclick = () => { choix.type = t.v; dessinerTypes(); };
@@ -271,7 +283,7 @@ function dessinerTypes(){
   });
   const msg = AVIS[choix.type];
   if(msg){
-    const b = document.createElement("p"); b.className = "bulle"; b.setAttribute("role", "status");
+    const b = document.createElement("p"); b.className = visibles === TYPES ? "bulle" : "bulle bas"; b.setAttribute("role", "status");
     b.style.setProperty("--mc", TYPES.find(t => t.v === choix.type).c); b.textContent = msg;
     el.appendChild(b);
   }
@@ -336,6 +348,7 @@ $("#form").addEventListener("submit", ev => {
     depuis:choix.depuis || "", urgence:$("#urgent").checked ? "Urgent" : "", tente:$("#tente").value.trim(), dispo:$("#dispo").value.trim()};
   envoyer(dernier);
 });
+$("#fonction").addEventListener("change", dessinerTypes);
 $("#reessayer").onclick = () => { if(dernier) envoyer(dernier); };
 $("#encore").onclick = () => { initialiser(); $("#merci").hidden = true; $("#form").hidden = false; window.scrollTo({top:0}); };
 $("#copier").onclick = async () => {
