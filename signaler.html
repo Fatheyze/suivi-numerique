@@ -276,8 +276,8 @@ function dessinerTypes(){
   if(!visibles.some(t => t.v === choix.type)) choix.type = null;
   const prof = visibles === TYPES;
   $("#note-profil").hidden = prof;
-  // Autres personnels : ni salle, ni matériel, ni « depuis quand », ni disponibilités
-  ["#materiel", "#salle", "#dispo"].forEach(s => { $(s).parentElement.hidden = !prof; if(!prof) $(s).value = ""; });
+  // Autres personnels : ni salle, ni matériel, ni « déjà essayé », ni « depuis quand », ni disponibilités
+  ["#materiel", "#salle", "#tente", "#dispo"].forEach(s => { $(s).parentElement.hidden = !prof; if(!prof) $(s).value = ""; });
   $("#depuis").parentElement.hidden = !prof;
   if(!prof && choix.depuis){ choix.depuis = null; puces("#depuis", DEPUIS, "depuis"); }
   visibles.forEach(t => {
