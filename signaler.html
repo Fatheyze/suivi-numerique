@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Signaler un problème numérique</title>
-<meta name="description" content="Signaler un problème informatique ou numérique au référent numérique du collège Marcel Pagnol.">
+<meta name="description" content="Signaler un problème informatique ou numérique au RRUPN du collège Marcel Pagnol.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -115,7 +115,7 @@ header.cahier::after{content:"";position:absolute;inset:0;background:url("data:i
 </header>
 
 <main>
-  <p class="bloc erreur" id="lien-ko" hidden>Ce lien est incomplet. Utilisez le lien ou le QR code fourni par le référent numérique.</p>
+  <p class="bloc erreur" id="lien-ko" hidden>Ce lien est incomplet. Utilisez le lien ou le QR code fourni par le RRUPN.</p>
 
   <form class="bloc" id="form" autocomplete="on" novalidate>
     <h2>Votre demande</h2>
@@ -183,7 +183,7 @@ header.cahier::after{content:"";position:absolute;inset:0;background:url("data:i
     <div class="actions">
       <button class="btn" type="submit" id="envoyer">Envoyer le signalement</button>
     </div>
-    <p class="aide">Votre signalement est chiffré : seul le référent numérique peut le lire. N'indiquez pas de mot de passe.</p>
+    <p class="aide">Votre signalement est chiffré : seul le RRUPN peut le lire. N'indiquez pas de mot de passe.</p>
   </form>
 
   <section class="bloc merci" id="merci" hidden>
@@ -205,6 +205,7 @@ header.cahier::after{content:"";position:absolute;inset:0;background:url("data:i
     </div>
   </section>
 </main>
+<footer class="aide" style="max-width:860px;margin:24px auto 32px;padding:0 16px;text-align:center">© 2026 Fathey Zeghoudi. Tous droits réservés. Toute reproduction ou réutilisation, totale ou partielle, de cet outil (code, textes, présentation) sans l'autorisation écrite de l'auteur est interdite et constitue une contrefaçon (articles L.335-2 et suivants du Code de la propriété intellectuelle).</footer>
 
 <script>
 "use strict";
@@ -306,7 +307,7 @@ function initialiser(){
 let dernier = null;
 function texteLisible(s){
   const t = TYPES.find(x => x.v === s.type);
-  return [`Signalement pour le référent numérique (${new Date(s.date).toLocaleString("fr-FR")})`,
+  return [`Signalement pour le RRUPN (${new Date(s.date).toLocaleString("fr-FR")})`,
     `De : ${s.nom} (${s.fonction})`, `Type : ${t ? t.l : s.type}`, `Salle ou lieu : ${s.salle || "non précisé"}`,
     s.materiel ? `Matériel : ${s.materiel}` : "", `Problème : ${s.description}`,
     s.depuis ? `Depuis : ${s.depuis.toLowerCase()}` : "", s.urgence ? "URGENT" : "", s.tente ? `Déjà essayé : ${s.tente}` : "", s.dispo ? `Disponibilités : ${s.dispo}` : ""].filter(Boolean).join("\n");
