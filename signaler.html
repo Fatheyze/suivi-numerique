@@ -213,8 +213,11 @@ const TYPES = [
   {v:"site", l:"Site internet", d:"Site du collège", m:"Site internet & communication", c:"#5C7CFA"},
   {v:"autre", l:"Autre", d:"Ou je ne sais pas", m:"Assistance & dépannage", c:"#D6453D"}
 ];
+const CODES = "Les comptes ENT sont désormais les comptes réseau : un seul code pour l'ENT, le réseau et Pix. Les élèves passent dans ma salle, envoyés par leur professeur principal, le lundi et le mardi à la récréation du matin uniquement.";
 const AVIS = {
-  ent: "Les comptes ENT sont désormais les comptes réseau. Envoyez-moi vos élèves uniquement le lundi et le mardi, à la pause récréation du matin."
+  ent: CODES,
+  reseau: CODES,
+  pix: CODES + " Pour Pix, je m'occupe uniquement des codes d'accès. L'organisation des certifications est à voir avec la direction."
 };
 const DEMANDEUR = {"Professeur":"Collègue", "Direction":"Direction", "CPE":"Vie scolaire (CPE)", "AED / vie scolaire":"Vie scolaire (CPE)",
   "Documentaliste":"CDI", "Secrétariat / gestion":"Secrétariat / gestion", "Autre personnel":"Collègue"};
