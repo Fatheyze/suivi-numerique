@@ -63,10 +63,7 @@ textarea{min-height:110px;resize:vertical}
 .type{display:flex;flex-direction:column;gap:2px}
 .bulle{position:relative;grid-row:span 2;align-self:start;margin:0 0 0 10px;padding:10px 14px;border-radius:14px;background:var(--mc);color:#fff;font-size:.88rem;line-height:1.4}
 .bulle::before{content:"";position:absolute;left:-8px;top:22px;border:8px solid transparent;border-left:0;border-right-color:var(--mc)}
-.bulle.bas{grid-column:1/-1;grid-row:auto}
 @media (max-width:560px){ .bulle{margin:6px 0 0} }
-.bulle.bas{margin:6px 0 0}
-.bulle.bas::before{left:24px;top:-8px;border:8px solid transparent;border-top:0;border-bottom-color:var(--mc)}
 @media (max-width:560px){ .bulle::before{left:24px;top:-8px;border:8px solid transparent;border-top:0;border-bottom-color:var(--mc)} }
 .t-tete{display:flex;align-items:center;gap:8px}
 .t-tete i{width:12px;height:12px;border-radius:3px;flex:none}
@@ -129,20 +126,14 @@ header.cahier::after{content:"";position:absolute;inset:0;background:url("data:i
         <label for="fonction">Vous êtes</label>
         <select id="fonction">
           <option value="Professeur">Professeur</option>
-          <option value="Direction">Direction</option>
-          <option value="CPE">CPE</option>
-          <option value="AED / vie scolaire">AED, vie scolaire</option>
           <option value="Documentaliste">Professeur documentaliste (CDI)</option>
-          <option value="Secrétariat / gestion">Secrétariat, gestion</option>
-          <option value="Autre personnel">Autre personnel</option>
         </select>
       </div>
     </div>
 
     <div class="etape">
       <span class="titre">Le problème concerne</span>
-      <div class="types" id="types" role="group" aria-label="Type de problème"></div>
-      <p class="aide" id="note-profil" hidden>Le RRUPN, M. Zeghoudi, gère uniquement la partie pédagogique. Les problèmes de matériel, de réseau ou de logiciels administratifs sont gérés par M. Khamla ou en faisant un ticket CARINA.</p>    </div>
+      <div class="types" id="types" role="group" aria-label="Type de problème"></div>    </div>
 
     <div class="etape ligne2">
       <div>
@@ -229,10 +220,6 @@ const AVIS = {
   reseau: CODES,
   pix: "Pix s'ouvre depuis le Médiacentre de l'ENT. " + PASSAGE
 };
-// Enseignants : tous les types. Autres personnels : seulement ce que gère le référent pour eux.
-const PROFS = ["Professeur", "Documentaliste"];
-const TYPES_ADMIN = ["ent", "ecrans", "site"];
-const typesVisibles = () => PROFS.includes($("#fonction").value) ? TYPES : TYPES.filter(t => TYPES_ADMIN.includes(t.v));
 const DEMANDEUR = {"Professeur":"Collègue", "Direction":"Direction", "CPE":"Vie scolaire (CPE)", "AED / vie scolaire":"Vie scolaire (CPE)",
   "Documentaliste":"CDI", "Secrétariat / gestion":"Secrétariat / gestion", "Autre personnel":"Collègue"};
 
@@ -275,15 +262,7 @@ function puces(sel, valeurs, cle, classe){
 }
 function dessinerTypes(){
   const el = $("#types"); el.innerHTML = "";
-  const visibles = typesVisibles();
-  if(!visibles.some(t => t.v === choix.type)) choix.type = null;
-  const prof = visibles === TYPES;
-  $("#note-profil").hidden = prof;
-  // Autres personnels : ni salle, ni matériel, ni « déjà essayé », ni « depuis quand », ni disponibilités
-  ["#materiel", "#salle", "#tente", "#dispo"].forEach(s => { $(s).parentElement.hidden = !prof; if(!prof) $(s).value = ""; });
-  $("#depuis").parentElement.hidden = !prof;
-  if(!prof && choix.depuis){ choix.depuis = null; puces("#depuis", DEPUIS, "depuis"); }
-  visibles.forEach(t => {
+  TYPES.forEach(t => {
     const b = document.createElement("button"); b.type = "button"; b.className = "type";
     b.innerHTML = `<span class="t-tete"><i style="background:${t.c}"></i>${t.l}</span><small>${t.d}</small>`; b.style.setProperty("--mc", t.c); b.setAttribute("aria-pressed", String(choix.type === t.v));
     b.onclick = () => { choix.type = t.v; dessinerTypes(); };
@@ -291,7 +270,7 @@ function dessinerTypes(){
   });
   const msg = AVIS[choix.type];
   if(msg){
-    const b = document.createElement("p"); b.className = visibles === TYPES ? "bulle" : "bulle bas"; b.setAttribute("role", "status");
+    const b = document.createElement("p"); b.className = "bulle"; b.setAttribute("role", "status");
     b.style.setProperty("--mc", TYPES.find(t => t.v === choix.type).c); b.textContent = msg;
     el.appendChild(b);
   }
@@ -300,6 +279,7 @@ function initialiser(){
   choix.type = null; choix.depuis = null;
   ["#salle","#materiel","#description","#tente","#dispo"].forEach(s => $(s).value = "");
   $("#nom").value = lire("signaler-nom"); if(lire("signaler-fonction")) $("#fonction").value = lire("signaler-fonction");
+  if(!$("#fonction").value) $("#fonction").selectedIndex = 0;
   dessinerTypes(); puces("#depuis", DEPUIS, "depuis"); $("#urgent").checked = false;
   $("#erreur").textContent = "";
 }
@@ -347,7 +327,7 @@ $("#form").addEventListener("submit", ev => {
   if(!nom) { err.textContent = "Indiquez votre nom."; $("#nom").focus(); return; }
   if(!choix.type) { err.textContent = "Choisissez ce que concerne le problème."; return; }
   if(!description) { err.textContent = "Décrivez le problème en quelques mots."; $("#description").focus(); return; }
-  if(!$("#dispo").parentElement.hidden && !$("#dispo").value.trim()) { err.textContent = "Indiquez vos disponibilités."; $("#dispo").focus(); return; }
+  if(!$("#dispo").value.trim()) { err.textContent = "Indiquez vos disponibilités."; $("#dispo").focus(); return; }
   err.textContent = "";
   ecrire("signaler-nom", nom); ecrire("signaler-fonction", $("#fonction").value);
   const t = TYPES.find(x => x.v === choix.type);
@@ -356,7 +336,6 @@ $("#form").addEventListener("submit", ev => {
     depuis:choix.depuis || "", urgence:$("#urgent").checked ? "Urgent" : "", tente:$("#tente").value.trim(), dispo:$("#dispo").value.trim()};
   envoyer(dernier);
 });
-$("#fonction").addEventListener("change", dessinerTypes);
 $("#reessayer").onclick = () => { if(dernier) envoyer(dernier); };
 $("#encore").onclick = () => { initialiser(); $("#merci").hidden = true; $("#form").hidden = false; window.scrollTo({top:0}); };
 $("#copier").onclick = async () => {
