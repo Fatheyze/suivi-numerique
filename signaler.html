@@ -276,11 +276,8 @@ function dessinerTypes(){
   if(!visibles.some(t => t.v === choix.type)) choix.type = null;
   const prof = visibles === TYPES;
   $("#note-profil").hidden = prof;
-  // Autres personnels : pas de matériel ; la salle ne sert que pour situer un écran
-  [["#materiel", prof], ["#salle", prof || choix.type === "ecrans"]].forEach(([s, vu]) => {
-    $(s).parentElement.hidden = !vu; if(!vu) $(s).value = "";
-  });
-  $("#salle").placeholder = prof ? "Salle 214, CDI, salle des profs…" : "Hall, cantine, salle des profs…";
+  // Autres personnels : ni salle ni matériel (les pannes d'écran, le référent les voit lui-même)
+  ["#materiel", "#salle"].forEach(s => { $(s).parentElement.hidden = !prof; if(!prof) $(s).value = ""; });
   visibles.forEach(t => {
     const b = document.createElement("button"); b.type = "button"; b.className = "type";
     b.innerHTML = `<span class="t-tete"><i style="background:${t.c}"></i>${t.l}</span><small>${t.d}</small>`; b.style.setProperty("--mc", t.c); b.setAttribute("aria-pressed", String(choix.type === t.v));
