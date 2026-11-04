@@ -154,8 +154,8 @@ header.cahier::after{content:"";position:absolute;inset:0;background:url("data:i
     </div>
 
     <div class="etape">
-      <label for="description">Que se passe-t-il ?</label>
-      <textarea id="description" maxlength="1200" placeholder="Décrivez ce que vous voyez : message d'erreur, ce qui ne marche pas, ce qui marchait avant…" required></textarea>
+      <label for="description">Décrivez votre demande</label>
+      <textarea id="description" maxlength="1200" placeholder="Ce qui ne marche pas (message d'erreur, ce qui marchait avant…) ou ce que vous souhaitez (une information à publier, un affichage à modifier…)" required></textarea>
     </div>
 
     <div class="etape">
@@ -276,8 +276,10 @@ function dessinerTypes(){
   if(!visibles.some(t => t.v === choix.type)) choix.type = null;
   const prof = visibles === TYPES;
   $("#note-profil").hidden = prof;
-  // Autres personnels : ni salle ni matériel (les pannes d'écran, le référent les voit lui-même)
-  ["#materiel", "#salle"].forEach(s => { $(s).parentElement.hidden = !prof; if(!prof) $(s).value = ""; });
+  // Autres personnels : ni salle, ni matériel, ni « depuis quand », ni disponibilités
+  ["#materiel", "#salle", "#dispo"].forEach(s => { $(s).parentElement.hidden = !prof; if(!prof) $(s).value = ""; });
+  $("#depuis").parentElement.hidden = !prof;
+  if(!prof && choix.depuis){ choix.depuis = null; puces("#depuis", DEPUIS, "depuis"); }
   visibles.forEach(t => {
     const b = document.createElement("button"); b.type = "button"; b.className = "type";
     b.innerHTML = `<span class="t-tete"><i style="background:${t.c}"></i>${t.l}</span><small>${t.d}</small>`; b.style.setProperty("--mc", t.c); b.setAttribute("aria-pressed", String(choix.type === t.v));
@@ -342,7 +344,7 @@ $("#form").addEventListener("submit", ev => {
   if(!nom) { err.textContent = "Indiquez votre nom."; $("#nom").focus(); return; }
   if(!choix.type) { err.textContent = "Choisissez ce que concerne le problème."; return; }
   if(!description) { err.textContent = "Décrivez le problème en quelques mots."; $("#description").focus(); return; }
-  if(!$("#dispo").value.trim()) { err.textContent = "Indiquez vos disponibilités."; $("#dispo").focus(); return; }
+  if(!$("#dispo").parentElement.hidden && !$("#dispo").value.trim()) { err.textContent = "Indiquez vos disponibilités."; $("#dispo").focus(); return; }
   err.textContent = "";
   ecrire("signaler-nom", nom); ecrire("signaler-fonction", $("#fonction").value);
   const t = TYPES.find(x => x.v === choix.type);
