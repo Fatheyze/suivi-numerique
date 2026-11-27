@@ -1423,7 +1423,9 @@ function synDescription(e){
 }
 function synCommentaire(e){
   const s = e.sig;
-  return [
+  const intro = "Bonjour Alexandre,\n\nJ'espère que tu vas bien. Ci-dessous, une demande de maintenance pour le collège.\n";
+  const fin = "\nJe te remercie. À très vite.\nFathey";
+  return intro + "\n" + [
     `Lieu : ${lieuDe(s) || "non précisé"}`,
     s.materiel ? `Matériel concerné : ${s.materiel}` : "",
     `Problème constaté : ${s.description}`,
@@ -1433,7 +1435,7 @@ function synCommentaire(e){
     s.dispo ? `Disponibilités de l'utilisateur pour une intervention : ${s.dispo}` : "",
     `Signalé par : ${s.nom}${s.fonction ? " (" + s.fonction.toLowerCase() + ")" : ""}, le ${dateFr(e.date)}`,
     `Contact au collège : Fathey Zeghoudi, référent numérique, Collège Marcel Pagnol (Bonnières-sur-Seine)`
-  ].filter(Boolean).join("\n");
+  ].filter(Boolean).join("\n") + "\n" + fin;
 }
 const texteTicket = e => `Description courte : ${synDescription(e)}\nSujet : ${synSujet(e.sig)}\n\n${synCommentaire(e)}`;
 function panneauSyn(e){
@@ -1444,7 +1446,7 @@ function panneauSyn(e){
     <li><span class="syn-champ">Bénéficiaire</span><div class="syn-val"><b>Moi même (demandeur)</b><span class="aide">laissez tel quel</span></div></li>
     <li><span class="syn-champ">Sujet</span><div class="syn-val"><b>${esc(synSujet(s))}</b><span class="aide">à choisir dans la liste</span></div></li>
     <li><span class="syn-champ">Commentaire</span>
-      <div class="syn-val"><textarea readonly rows="9">${esc(synCommentaire(e))}</textarea><button class="mini" type="button" data-syncopie="com" data-id="${id}">Copier</button></div></li>
+      <div class="syn-val"><textarea readonly rows="16">${esc(synCommentaire(e))}</textarea><button class="mini" type="button" data-syncopie="com" data-id="${id}">Copier</button></div></li>
     <li><span class="syn-champ">Après « Ok »</span>
       <div class="syn-val"><input type="text" id="synnum-${id}" placeholder="N° d'incident, ex. I261016_00012" value="${esc(s.ticket || "")}" maxlength="40" autocomplete="off"><button class="mini" type="button" data-synnum="${id}">Enregistrer</button></div>
       <span class="aide">Le numéro apparaît dans la liste « Tous les Incidents ». Il sera noté dans votre journal.</span></li>
